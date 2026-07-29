@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 #
-# authoring-format.sh — verify /specify AUTHORS to the contract format on a planning
-# model. The companion to model-guard.sh: that one asserts a budget model STOPS;
-# this one asserts a frontier model FOLLOWS — it drafts a `.spec.md` that obeys the
-# Output Format and branches Story vs Epic by size (the "Authoring: Story vs Epic"
-# section of skills/specify/SKILL.md).
+# authoring-format.sh — verify /specify AUTHORS to the contract format on a
+# frontier model, on Kimi Code. The Kimi twin of tests/claude/authoring-format.sh
+# — same property, same grading, different host.
 #
-# In headless single-turn mode the Staging Loop writes the draft to `.spec.md` and
-# stops before the user's commit confirmation, so the draft IS the artifact we
-# grade. A trial PASSES when:
+# The companion to model-guard.sh: that one asserts a budget model STOPS; this
+# one asserts a frontier model FOLLOWS — it drafts a `.spec.md` that obeys the
+# Output Format and branches Story vs Epic by size (the "Authoring: Story vs
+# Epic" section of skills/specify/SKILL.md).
+#
+# In headless single-turn mode the Staging Loop writes the draft to `.spec.md`
+# and stops before the user's commit confirmation, so the draft IS the artifact
+# we grade. A trial PASSES when:
 #   * the guard did NOT falsely refuse a frontier model, AND
 #   * `.spec.md` exists, AND
 #   * STORY case  → exactly one contract: 1 `Acceptance Criteria` heading, a
@@ -24,19 +27,17 @@
 # vocabulary survives.
 #
 # Descriptions are deliberately GREENFIELD and self-contained: a fresh `git init`
-# has no codebase, so a story that names an existing artifact would (correctly) make
-# the architect stop and ask for grounding rather than author. We test the authoring
-# format, so we feed it work it can draft from inference alone.
+# has no codebase, so a story that names an existing artifact would (correctly)
+# make the architect stop and ask for grounding rather than author. We test the
+# authoring format, so we feed it work it can draft from inference alone.
 #
-# Permission mode is `bypassPermissions` (not acceptEdits): the architect must Read
-# the shared rubrics — which live outside the temp repo — and may `bd init`. Under
-# acceptEdits those prompt and stall, starving the test of the very Output Format it
-# is checking.
+# Kimi note: in `kimi -p` mode skills must be invoked with the explicit
+# `/skill:<name>` form — a bare `/specify` is sent to the model verbatim.
 #
 # Usage:
-#   tests/claude/authoring-format.sh [-n TRIALS] [-m MODEL] [-v] [--no-sync]
+#   tests/kimi/authoring-format.sh [-n TRIALS] [-m MODEL] [-v] [--no-sync]
 #     -n  trials per description  (default 2)
-#     -m  frontier model alias    (default opus)
+#     -m  frontier model          (default kimi-code/k3 — the K3-class frontier rung)
 #     -v  verbose: print each trial's raw output and the draft
 #     --no-sync  skip overlaying the working tree onto the install
 #
@@ -46,10 +47,9 @@ set -u
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 TRIALS=2
-MODEL=opus
+MODEL=kimi-code/k3
 VERBOSE=0
 SYNC=1
-args=()
 while [ $# -gt 0 ]; do
   case "$1" in
     -n) TRIALS=$2; shift 2 ;;
@@ -82,13 +82,14 @@ ERR=0
 FAILLOG=$(mktemp)
 
 # $1 = kind (story|epic), $2 = description
-# Returns: 0=PASS, 1=FAIL, 2=ERROR (trial never reached the model — inconclusive).
+# Returns: 0=PASS, 1=FAIL, 2=ERROR (trial never reached the model).
 run_trial() {
   local kind="$1" desc="$2" dir out draft
   dir=$(mktemp -d)
   ( cd "$dir" && git init -q )
-  out=$( cd "$dir" && timeout 300 claude -p "/specify $desc" \
-           --model "$MODEL" --permission-mode bypassPermissions 2>&1 )
+  # `kimi -p` is non-interactive and auto-approves regular tool calls — no
+  # permission flag exists or is needed.
+  out=$( cd "$dir" && run_clean_env timeout 300 kimi -p "/skill:specify $desc" -m "$MODEL" 2>&1 )
 
   local infra
   if infra=$(infra_error "$out"); then
@@ -100,10 +101,8 @@ run_trial() {
 
   local -a problems=()
 
-  # The guard must NOT refuse a frontier model. (The diagnostic `tier=frontier`
-  # line isn't reliably surfaced in headless final output, so we don't require it;
-  # successful authoring below is itself proof the guard let a frontier model pass.
-  # The budget-STOP direction is covered by model-guard.sh.)
+  # The guard must NOT refuse a frontier model. (The budget-STOP direction is
+  # covered by model-guard.sh.)
   grep -qiE 'must run on a frontier model' <<<"$out" && problems+=("falsely refused a frontier model")
 
   draft="$dir/.spec.md"
@@ -112,11 +111,7 @@ run_trial() {
   else
     local body ac_count solver_count
     body=$(cat "$draft")
-    # Count AC headings at any level (H2 in a single story; children in an epic doc
-    # may nest deeper) — robust to decomposition formatting.
     ac_count=$(grep -cE '^#+[[:space:]]+Acceptance Criteria' <<<"$body")
-    # 3.0.0 removals — regressions the rubric sync can't catch, since they live in
-    # what the model *does* with the rubric, not in the rubric text itself.
     grep -qiF "Deliverable Format" <<<"$body" && problems+=("draft carries a removed 'Deliverable Format' section")
     grep -qiE '\bplanning (model|tier|rung)' <<<"$body" && problems+=("draft uses retired 'planning' tier vocabulary")
     grep -qE 'effort[ :=*]+medium\b' <<<"$body" && problems+=("effort scale regressed to 'medium' — that names a rung; the scale is low/high/max")
@@ -158,7 +153,7 @@ run_trial() {
 
 [ "$SYNC" -eq 1 ] && { sync_plugin || exit 1; }
 
-echo "authoring-format: model=$MODEL trials/desc=$TRIALS  story=${#STORY_DESCRIPTIONS[@]} epic=${#EPIC_DESCRIPTIONS[@]}"
+echo "authoring-format (kimi): model=$MODEL trials/desc=$TRIALS  story=${#STORY_DESCRIPTIONS[@]} epic=${#EPIC_DESCRIPTIONS[@]}"
 
 run_set() {  # $1=kind; remaining args = descriptions
   local kind="$1"; shift

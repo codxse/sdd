@@ -5,7 +5,21 @@
   "author": "nadiar <codex@nadiar.id>",
   "homepage": "https://github.com/codxse/sdd",
   "license": "MIT",
-  "keywords": ["workflow", "planning", "architect", "specify", "refine", "board", "solve", "validate", "beads", "bd", "epic", "parallel", "worktree"],
+  "keywords": [
+    "workflow",
+    "planning",
+    "architect",
+    "specify",
+    "refine",
+    "board",
+    "solve",
+    "validate",
+    "beads",
+    "bd",
+    "epic",
+    "parallel",
+    "worktree"
+  ],
   "skills": [
     "./plugins/sdd/skills/",
     "./plugins/writing-claude-md/skills/"
@@ -18,6 +32,10 @@
     {
       "event": "PreCompact",
       "command": "cat \"$KIMI_PLUGIN_ROOT/plugins/sdd/hooks/session-primer.md\""
+    },
+    {
+      "event": "UserPromptSubmit",
+      "command": "sh \"$KIMI_PLUGIN_ROOT/plugins/sdd/hooks/kimi-model-context.sh\""
     }
   ],
   "interface": {

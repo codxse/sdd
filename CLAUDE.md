@@ -25,7 +25,13 @@ Shared frontmatter must keep `disable-model-invocation: false` so Codex accepts 
 skill. The exception is behavioral guards that must hold on a budget model:
 `plugins/sdd/tests/{claude,codex,kimi}/model-guard.sh` run `/specify`, `/refine`, and
 `/orchestrate` headless across multiple trials (including override-injection descriptions) and
-assert each Model Guard stops it. Claude uses Haiku and `/specify`; Codex uses `gpt-5.6-luna` plus
+assert each Model Guard stops it. They assert **both directions and the classification itself**: a
+below-frontier model (`-m`, `--below-tier budget|medium`) must stop, a frontier model (`-M`) must
+classify `frontier` and continue, and every
+trial must show the guard's `model-guard: id=<exact-id> tier=<tier>` line (`guard_line`, in
+`tests/lib.sh`). Refusal-only assertions cannot fail — a host that never states its model ID
+classifies `unsure`, and `unsure` refuses in the same words as `budget` — which is exactly how
+Kimi's missing model identity went unnoticed. Claude uses Haiku and `/specify`; Codex uses `gpt-5.6-luna` plus
 explicit `$sdd:specify` mentions; Kimi uses `kimi-code/kimi-for-coding` plus `/skill:specify`.
 Codex's generic base prompt names only GPT-5, so its default plugin hook reads the host-provided
 `model` field and injects the exact slug. The harnesses call the real model, so they're slow and
@@ -38,6 +44,18 @@ helpers live under each host directory; `tests/lib.sh` keeps only the host-agnos
 `kimi.plugin.json` declaring both `skills/` trees — both marketplace plugins ship to Kimi as one
 plugin named `sdd`. The manifest also ports the session-primer hook (`SessionStart` +
 `PreCompact`) via its `hooks` field, with `$KIMI_PLUGIN_ROOT` in place of `${CLAUDE_PLUGIN_ROOT}`.
+It carries a third hook the other hosts don't need: **`UserPromptSubmit` →
+`hooks/kimi-model-context.sh`**, which supplies the model ID Kimi never states. No Kimi hook payload
+has a `model` field and its system prompt names only "Kimi Code CLI", so without this every gated
+skill classifies `unsure` — or worse, guesses ("Kimi Code CLI runs on k3, k3 is frontier") and
+authors on a budget model. `UserPromptSubmit` is used because it is the only Kimi hook documented to
+append its output to context, and the only event whose payload carries the `session_id`; the hook
+reads `modelAlias` from the session's own record under `$KIMI_CODE_HOME/sessions/*/`, last
+occurrence winning so an interactive `/model` switch is picked up, and fails closed (silence →
+`unsure` → the gated skills stop). Two wrong sources are documented in the hook so they are not
+`simplified` back in: the launching process's argv (kimi overwrites its own argv, erasing `-m`) and
+`default_model` from config.toml (stale under a `-m` override — it tells a budget session it is
+frontier).
 Two Kimi gaps are accepted and documented in the README: plugins can't ship subagent definitions —
 worked around, not solved: Kimi's agent loader reads the Claude-format `agents/*.md` verbatim
 (ignoring the `model:` pin), so users copy them into `~/.agents/agents/` and the reviewer pin keeps

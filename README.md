@@ -120,7 +120,11 @@ manager with `/plugins`.
 
 Invoke the skills as `/skill:specify`, `/skill:solve`, …, or in plain English — Kimi doesn't register
 `/specify`-style slash commands for plugin skills. The session primer hook (`SessionStart` /
-`PreCompact`) is ported and active. One host gap to know: there is no per-skill
+`PreCompact`) is ported and active, alongside a Kimi-only `UserPromptSubmit` hook that tells the
+session its own model ID — Kimi states one nowhere a model can read it, and without it the
+frontier-gated skills (`/specify`, `/refine`, `/orchestrate`) either refuse on every model or guess
+their tier. It needs no setup, but it does need the session reloaded after install like everything
+else here. One host gap to know: there is no per-skill
 implicit-invocation gate (no equivalent of Codex's `agents/openai.yaml`), so `/solve` and
 `/validate` rely on their own prose to stay slash-only. Plugins also can't ship subagent
 definitions on this host — for `/validate`'s reviewer, see the copy step under *Reviewer agents*
