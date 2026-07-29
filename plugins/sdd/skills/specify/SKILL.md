@@ -281,10 +281,13 @@ it in addition to the Atomicity Gate, never instead of it.
 
 Recommend the **cheapest rung + effort likely to succeed**, on the same ladder as **Tier
 classification** — but judge what the *story* demands, not what you are running on, and name the
-rung only (no model IDs; the roster changes, the judgment shouldn't). `budget` = mechanical, follows
-an existing pattern. `frontier` = high blast radius if subtly wrong (security, auth, money, data
-loss), or the approach itself takes judgment (novel algorithm, non-obvious concurrency/ordering,
-constraints that look like they conflict). `medium` = between.
+rung only (no model IDs; the roster changes, the judgment shouldn't).
+
+| Rung | The story asks for |
+|---|---|
+| `budget` | Mechanical work that follows an existing pattern. |
+| `medium` | Between the two. |
+| `frontier` | High blast radius if subtly wrong (security, auth, money, data loss), or an approach that itself takes judgment (novel algorithm, non-obvious concurrency/ordering, constraints that look like they conflict). |
 
 **Difficulty signals** (presence pushes up a tier; none present → budget): security/auth/crypto
 surface; concurrency, ordering, or race-condition correctness; non-obvious algorithmic or
