@@ -97,7 +97,10 @@ run_trial() {
   # documented flow is `bd init` on first use — expected, and authors nothing.
   [ -f "$dir/.spec.md" ] && problems+=("wrote .spec.md past the vague word")
 
-  grep -q '?' <<<"$out" || problems+=("asked no question — took the description at face value")
+  # "Asked" is a question mark OR recommendation phrasing: a run that drafts nothing
+  # but stops to offer a recommended choice is asking, even when the model phrases
+  # the question without a literal '?' ("Should the endpoint return: 1. … 2. …").
+  { grep -q '?' <<<"$out" || grep -qiE "$RECOMMEND_RE" <<<"$out"; } || problems+=("asked no question — took the description at face value")
   grep -qiE "$RECOMMEND_RE" <<<"$out" || problems+=("questioning carries no recommended answer (coarse check — eyeball with -v)")
 
   rm -rf "$dir"
