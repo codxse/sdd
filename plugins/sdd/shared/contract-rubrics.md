@@ -110,7 +110,8 @@ everything:
 - A signal about **subtlety or blast radius** (the signals above) → raise **tier**; more effort on a
   weaker model doesn't close a capability gap.
 
-**Effort** (`low`/`medium`/`high`/`max` — this workflow's own scale) grades independently of tier.
+**Effort** (`low`/`high`/`max` — this workflow's own scale) grades independently of tier. It has no
+`medium`: that word names a **rung** here, and one word must not mean two things on two axes.
 
 State the call as `Recommended Solver: <tier> · <effort>` plus one line naming the driving signal(s),
 or "no difficulty signal — mechanical" for budget.
@@ -233,7 +234,7 @@ Feature: [behavior under test — titled by problem type]
 Verification: [auto | human | auto+human]   — [human/auto+human: what a person checks + how to exercise it]
 
 ## Complexity
-Recommended Solver: [budget | medium | frontier] · effort [low | medium | high | max]
+Recommended Solver: [budget | medium | frontier] · effort [low | high | max]
 [One line: which difficulty signal(s) drove the tier, or "no difficulty signal — mechanical".]
 
 ## Out of Scope

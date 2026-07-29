@@ -1,7 +1,7 @@
 ---
 name: orchestrate
 description: "Automate the story-by-story /solve → review → land loop for one bd epic, with a single human gate at the end. Frontier model only, the same gate /specify and /refine carry — it makes unsupervised judgment calls throughout and never pauses for a human until the final PR. Creates epic/<id>, dispatches /solve --unattended one story at a time (--parallel for a whole ready wave), reviews and lands each through /validate --unattended, then opens one PR epic/<id> → <base>. Nothing is final until that PR merges."
-version: 1.7.1
+version: 1.7.2
 argument-hint: '<epic-id> [--dry-run] [--parallel]'
 disable-model-invocation: false
 user-invocable: true
@@ -221,8 +221,10 @@ Repeat until termination (step 6):
 3. **Review, then land — one story at a time, only in this skill's own control flow — never inside
    a per-story subagent.** For each story a subagent hands back at `needs-review`:
    - **Mandatory review, no orchestrator judgment.** Read its **effort** from `bd show <id>`'s
-     `## Complexity` line (`Recommended Solver: <tier> · effort <low|medium|high|max>`); no such
-     section (a pre-rubric story) → fall back to `high`, `/validate --review`'s own default. Run
+     `## Complexity` line (`Recommended Solver: <tier> · effort <low|high|max>`); no such
+     section (a pre-rubric story) → fall back to `high`, `/validate --review`'s own default. A story
+     authored before this scale dropped `medium` may still record `effort medium` — pass it through
+     unchanged; the host's `/code-review` still accepts it. Run
      `/validate <id> --review <effort> --unattended`. This runs on every story that reaches review,
      always — never skipped, never a guess about whether it's warranted. Its cost keys off the same
      Complexity call twice, with no orchestrator judgment in either dimension: the effort above picks

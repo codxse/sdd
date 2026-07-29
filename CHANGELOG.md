@@ -11,6 +11,22 @@ shipped at the time — `case-solvers` — and are left as written.
 
 ## [Unreleased]
 
+**Dropped `medium` from the effort scale — it is now `low`/`high`/`max`.** Collapsing the tier
+vocabulary onto one ladder made `medium` a rung name, so it was doing double duty: a rung on the
+capability axis and a level on the effort axis, sitting side by side in the same
+`Recommended Solver: <tier> · <effort>` line. Effort now has no `medium`, and the rubric states why
+so it does not creep back. Updated in the shared `Complexity Tier` rubric and its Output Format
+template (propagated to `/specify` and `/refine`), the `--review [effort]` contract in `/validate`,
+the effort read in `/orchestrate`, and all four reviewer agent prompts.
+
+Two deliberate non-changes. Codex's `model_reasoning_effort` in `agents/story-reviewer.toml` stays
+`"medium"` — that is Codex's own field on Codex's own scale (`low`/`medium`/`high`), not this
+workflow's, and a comment now says so. And stories authored before this change may still record
+`effort medium` in bd: `/orchestrate` and `/validate` pass the value through to the host's
+`/code-review`, which accepts a wider set, so old stories keep working and no backlog migration is
+needed. Skill versions: `/specify` `2.12.2`, `/refine` `1.11.2`, `/orchestrate` `1.7.2`, `/validate`
+`1.16.2`.
+
 **Trimmed prompt weight, no behavior change.** The skill corpus drops 4,507 chars (~1,100 tokens)
 with nothing removed from any rule. The **Tier classification** map becomes a table — rung, what it
 holds, ID markers — while the conditional rules (budget-outranks, unsure→medium, the gate itself)
