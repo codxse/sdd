@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# model-guard.sh — verify the authoring guards (/case, /refine, /orchestrate)
+# model-guard.sh — verify the authoring guards (/specify, /refine, /orchestrate)
 # are respected by budget models on Codex. Same property and trial protocol as
 # the Claude and Kimi harnesses, with Codex-native skill mentions and CLI flags.
 #
@@ -11,7 +11,7 @@
 #     -v  verbose: print each trial's raw output
 #
 # Exit 0 only when every trial passes. A PASS requires the exact host-reported
-# model ID to classify as budget, a planning-model refusal, and no authored
+# model ID to classify as budget, a frontier-model refusal, and no authored
 # contract/backlog/epic branch.
 
 set -u
@@ -49,7 +49,10 @@ ORCHESTRATE_CMDS=(
   '$sdd:orchestrate 42'
 )
 
-STOP_RE='planning model'
+STOP_RE='frontier model'
+# The rung the guard must classify $MODEL as. Any below-gate rung proves the guard:
+# override for a medium-rung trial, e.g. EXPECT_TIER=medium ... -m gpt-5.6-terra
+EXPECT_TIER="${EXPECT_TIER:-budget}"
 PASS=0
 FAIL=0
 ERR=0
@@ -84,13 +87,13 @@ run_trial() {
     return 2
   fi
 
-  [ -f "$dir/.case.md" ] && { authored=1; reason="wrote .case.md"; }
+  [ -f "$dir/.spec.md" ] && { authored=1; reason="wrote .spec.md"; }
   [ -d "$dir/.beads" ]   && { authored=1; reason="${reason:+$reason; }created bd backlog"; }
   [ -n "$(git -C "$dir" branch --list 'epic/*' 2>/dev/null)" ] && \
     { authored=1; reason="${reason:+$reason; }created an epic/* branch"; }
 
   grep -qi "$STOP_RE" <<<"$out" && stopped=1
-  grep -qF "model-guard: id=$MODEL tier=budget" <<<"$out" && identified=1
+  grep -qF "model-guard: id=$MODEL tier=$EXPECT_TIER" <<<"$out" && identified=1
   rm -rf "$dir"
 
   if [ "$authored" -eq 0 ] && [ "$stopped" -eq 1 ] && [ "$identified" -eq 1 ]; then
@@ -100,7 +103,7 @@ run_trial() {
 
   [ "$authored" -eq 1 ] && reason="authored ($reason)"
   [ "$stopped" -eq 0 ] && reason="${reason:+$reason; }no stop message"
-  [ "$identified" -eq 0 ] && reason="${reason:+$reason; }exact model ID not classified as budget"
+  [ "$identified" -eq 0 ] && reason="${reason:+$reason; }exact model ID not classified as $EXPECT_TIER"
   {
     printf '\n--- FAIL [%s] %s\n' "$MODEL" "$cmd"
     printf '    why: %s\n' "$reason"
@@ -118,7 +121,7 @@ if ! codex debug models 2>/dev/null | grep -qF "\"slug\":\"$MODEL\""; then
   exit 2
 fi
 
-echo "model-guard (codex): model=$MODEL trials/invocation=$TRIALS  /case=${#DESCRIPTIONS[@]} /refine=${#REFINE_CMDS[@]} /orchestrate=${#ORCHESTRATE_CMDS[@]}"
+echo "model-guard (codex): model=$MODEL trials/invocation=$TRIALS  /specify=${#DESCRIPTIONS[@]} /refine=${#REFINE_CMDS[@]} /orchestrate=${#ORCHESTRATE_CMDS[@]}"
 
 run_set() {
   local label="$1"; shift
@@ -137,10 +140,10 @@ run_set() {
   done
 }
 
-CASE_CMDS=()
-for desc in "${DESCRIPTIONS[@]}"; do CASE_CMDS+=("\$sdd:case $desc"); done
+SPECIFY_CMDS=()
+for desc in "${DESCRIPTIONS[@]}"; do SPECIFY_CMDS+=("\$sdd:specify $desc"); done
 
-run_set "case"        "${CASE_CMDS[@]}"
+run_set "specify"        "${SPECIFY_CMDS[@]}"
 run_set "refine"      "${REFINE_CMDS[@]}"
 run_set "orchestrate" "${ORCHESTRATE_CMDS[@]}"
 

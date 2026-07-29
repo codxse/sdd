@@ -15,13 +15,51 @@ shipped at the time — `case-solvers` — and are left as written.
 `sdd`.** The repo is now `codxse/sdd`, the marketplace id and plugin id are both `sdd`, the plugin
 directory moved `plugins/case-solvers/` → `plugins/sdd/`, and qualified invocations follow:
 `$case-solvers:orchestrate` → `$sdd:orchestrate`, agent `case-solvers:case-reviewer` →
-`sdd:case-reviewer`. The name now describes what the plugin is — spec-driven development — rather
+`sdd:story-reviewer`. The name now describes what the plugin is — spec-driven development — rather
 than one of its six commands.
 
-**Nothing about the workflow itself changed.** `/case`, `/refine`, `/board`, `/solve`, `/evaluate`,
-and `/orchestrate` keep their names ("case" is the domain word for a story, not the project name),
-the reviewer agents stay `case-reviewer` / `case-reviewer-strong`, and bd backlogs are untouched.
-Only `/evaluate` (`1.15.0` → `1.15.1`) changed prose at all: the reviewer-agent namespacing example.
+**BREAKING: `/case` → `/specify` and `/evaluate` → `/validate`.** Two of the six commands are renamed
+for the same reason as the project: they now say what they do. `/refine`, `/board`, `/solve`, and
+`/orchestrate` are unchanged, and **bd backlogs carry over untouched** — stories, labels, and
+dependencies are unaffected. The transient authoring draft moved `.case.md` → `.spec.md`, and the
+reviewer agents became `story-reviewer` / `story-reviewer-strong` — named for what they review (one
+story branch) rather than for the command that spawns them. In the README's three-roles framing the
+human role follows its command: the **evaluator** is now the **validator**, and `/orchestrate` joins
+the architect, since it is frontier-gated and stands in for the human when nobody is watching.
+
+**BREAKING: one three-rung model ladder, and the authoring gate is now frontier-only.** The plugin
+ran two tier vocabularies that shared words — a binary `budget`/`planning` gate in
+`shared/model-tiers.md`, and a ternary `budget`/`medium`/`frontier` complexity call in
+`shared/contract-rubrics.md` that becomes the `solver-<tier>` label. Same top rung, two names, and no
+middle rung on the gate, which left Sonnet-class models with nowhere to sit. There is now **one
+ladder** — `budget` / `medium` / `frontier` — serving both consumers, with each rung defined by what
+the model can hold rather than by price alone, and `planning` retired as a tier name (it describes the
+*job* `/specify` does, never a rung).
+
+The gate is a threshold on that ladder: `/specify`, `/refine`, and `/orchestrate` require
+**`frontier`** and refuse `medium`. **This is a real tightening** — `sonnet`, `gpt-5.5`,
+`gpt-5.6-terra`, and Gemini Pro-class models cleared the old `planning` gate and no longer do.
+Authoring the WHAT is where a subtle error is paid for by every later solve. `/solve` carries no gate
+and reports its rung; `/board` and `/validate` are ungated as before. Reviewer pinning retiered with
+the ladder: `story-reviewer` is the **medium** rung (Claude `sonnet`, Codex `gpt-5.6-terra`),
+`story-reviewer-strong` the **frontier** rung (`opus`, `gpt-5.6-sol`), and the binding floor is now
+stated as "never below medium" — the never-a-budget-reviewer rule is unchanged.
+
+**`Budget-Solver Fit` → `Atomicity Gate`.** The rubric was never about model cost — its own text said
+it applies "regardless of which model runs `/solve`". It is a story-shape invariant, so it is now
+named for the property it enforces and leads with why it exists: a vague story does not fail fast, it
+gets *interpreted*, and every model interprets differently. That is the **ambiguity tax** —
+hallucinated APIs, invented data models, rework cycles — and it is cheaper to pay once at authoring
+time. *Atomic* is defined explicitly as **bounded** + **settled**, with a model-independent test:
+two different models reading the contract would build the same thing; wherever their answers would
+diverge, the story is not atomic yet.
+
+Skill versions: `/specify` (`2.11.0` → `2.12.0`, and `skills/case/` → `skills/specify/`), `/validate`
+(`1.15.1` → `1.16.0`, `skills/evaluate/` → `skills/validate/`), `/refine` (`1.10.0` → `1.11.0`),
+`/solve` (`1.8.0` → `1.9.0`), `/orchestrate` (`1.6.0` → `1.7.0`), `/board` (`1.1.0` → `1.1.1`). The
+three `model-guard.sh` harnesses now assert the refusal on `frontier model` rather than
+`planning model`, and the Codex twin takes an `EXPECT_TIER` override so the guard can also be trialled
+against a medium-rung model, not only a budget one.
 
 **It is breaking for installs, not for usage.** Plugin id, marketplace id, and the host cache paths
 all move, so an in-place `/plugin update` won't reach the new plugin — remove the old marketplace

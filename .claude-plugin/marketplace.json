@@ -1,17 +1,17 @@
 {
   "name": "sdd",
-  "description": "Claude Code plugins by nadiar: workflow skills (/case, /refine, /board, /solve, /evaluate, /orchestrate) and context-writing helpers.",
+  "description": "Claude Code plugins by nadiar: workflow skills (/specify, /refine, /board, /solve, /validate, /orchestrate) and context-writing helpers.",
   "owner": { "name": "nadiar", "email": "codex@nadiar.id" },
   "plugins": [
     {
       "name": "sdd",
       "source": "./plugins/sdd",
-      "description": "A bd-backed, parallel-capable workflow: /case authors stories/epics in Beads, /refine revises a story, /board shows the backlog, /solve implements one in an isolated worktree, /evaluate merges after human review, /orchestrate automates the solve-review-land loop for a whole epic behind one final PR. Requires the bd (Beads) CLI.",
+      "description": "A bd-backed, parallel-capable workflow: /specify authors stories/epics in Beads, /refine revises a story, /board shows the backlog, /solve implements one in an isolated worktree, /validate merges after human review, /orchestrate automates the solve-review-land loop for a whole epic behind one final PR. Requires the bd (Beads) CLI.",
       "version": "3.0.0",
       "author": { "name": "nadiar", "email": "codex@nadiar.id" },
       "license": "MIT",
       "category": "workflow",
-      "keywords": ["workflow", "planning", "architect", "case", "refine", "board", "solve", "evaluate", "beads", "bd", "epic", "parallel"]
+      "keywords": ["workflow", "planning", "architect", "specify", "refine", "board", "solve", "validate", "beads", "bd", "epic", "parallel"]
     },
     {
       "name": "writing-claude-md",

@@ -3,7 +3,7 @@
 # rubrics-sync.sh — keep the Contract Rubrics inlined in each SKILL.md byte-identical
 # to shared/contract-rubrics.md, the single source of truth.
 #
-# /case and /refine are held to one set of contract rubrics, inlined into both
+# /specify and /refine are held to one set of contract rubrics, inlined into both
 # SKILL.md files rather than read from shared/ at runtime. The rubrics are a hard
 # gate — every invocation needs them — so a runtime read saves no context and costs
 # a path that cannot be resolved reliably: a relative path in skill prose resolves
@@ -31,7 +31,7 @@ esac
 
 python3 - "$mode" \
   "$PLUGIN_ROOT/shared/contract-rubrics.md" \
-  "$PLUGIN_ROOT/skills/case/SKILL.md" \
+  "$PLUGIN_ROOT/skills/specify/SKILL.md" \
   "$PLUGIN_ROOT/skills/refine/SKILL.md" <<'PY'
 import pathlib
 import sys

@@ -1,15 +1,15 @@
-# Contract Rubrics — shared by `/case` and `/refine`
+# Contract Rubrics — shared by `/specify` and `/refine`
 
-The quality bars for authoring or revising a story contract on a **planning model**. The flow lives
+The quality bars for authoring or revising a story contract on a **frontier model**. The flow lives
 in each skill; the bars below are identical for both, so they are written once, here.
 
 **This file is the single source of truth, but it is not read at runtime.** Everything below
-`BEGIN SHARED` is inlined verbatim into the `Contract Rubrics` section of `skills/case/SKILL.md` and
-`skills/refine/SKILL.md` by `tests/rubrics-sync.sh`. Edit the rubrics **here**, then run
+`BEGIN SHARED` is inlined verbatim into the `Contract Rubrics` section of `skills/specify/SKILL.md`
+and `skills/refine/SKILL.md` by `tests/rubrics-sync.sh`. Edit the rubrics **here**, then run
 `tests/rubrics-sync.sh --write`; never hand-edit the generated block in a skill. Running the script
 with no flag verifies both copies match and fails on drift.
 
-Inlining is deliberate. The rubrics are a hard gate — every `/case` and `/refine` invocation needs
+Inlining is deliberate. The rubrics are a hard gate — every `/specify` and `/refine` invocation needs
 them, so a separate runtime read saves nothing and costs a path that cannot be resolved reliably: a
 relative path in skill prose resolves against the *user's* working directory, not the plugin, and
 `${CLAUDE_PLUGIN_ROOT}` is substituted by Claude Code but not by Codex. Inlined text needs neither.
@@ -21,7 +21,7 @@ relative path in skill prose resolves against the *user's* working directory, no
 - **Specific ≠ prescriptive.** A story states a testable, unambiguous *outcome* — never the
   mechanism or code.
 - **Who, What, Why.** A story is written for an actor. The Problem Statement opens with one story line — `As a <actor>, I want <what>, so that <why>` — before anything else. A story whose actor or benefit can't be named isn't ready to author.
-- **INVEST.** Every story is **I**ndependent (schedulable alone — a hard ordering belongs in an epic's dependencies), **N**egotiable (outcome, never mechanism), **V**aluable (the `so that` names a real benefit), **E**stimable (grounded and unambiguous enough to size — Budget-Solver Fit's unsettled middle), **S**mall (Budget-Solver Fit's too big), **T**estable (AC Quality Rubric).
+- **INVEST.** Every story is **I**ndependent (schedulable alone — a hard ordering belongs in an epic's dependencies), **N**egotiable (outcome, never mechanism), **V**aluable (the `so that` names a real benefit), **E**stimable (grounded and unambiguous enough to size — the Atomicity Gate's unsettled middle), **S**mall (the Atomicity Gate's too big), **T**estable (AC Quality Rubric).
 - **No drift.** Don't restate the command, duplicate repo conventions, or add sections outside the
   template.
 - **Diagnosed, not hypothesized.** A Bugfix premise is the *observed* failure, never an inferred
@@ -47,12 +47,25 @@ Criteria, Verification, Out of Scope.
 
 ---
 
-## Budget-Solver Fit
+## Atomicity Gate
 
-A story fits a budget solver when its **scope is bounded** and **nothing inside it is left
-undecided** — no open design decision, no unconfirmed cause. Either failure — too big, or a gap in
-the middle — and the solver drifts. Size *and* settle every story for a budget model, regardless of
-which model runs `/solve`.
+A vague story does not fail fast; it gets **interpreted** — and every model interprets differently.
+That is the **ambiguity tax**: hallucinated APIs, invented data models, rework cycles. Paying it
+once here, at authoring time, is cheaper than paying it on every solve attempt.
+
+A story is **atomic** when both hold:
+
+1. **Bounded** — one capability in one subsystem; no more than ~6–8 AC scenarios; each AC one
+   observable behavior.
+2. **Settled** — nothing inside is left to the solver's judgment: no open design decision, no
+   unconfirmed root cause, every named artifact verified to exist.
+
+Either failure — too big, or a gap in the middle — and the solver drifts.
+
+**The test is model-independent:** two different models reading this contract would build the same
+thing. Wherever their answers would diverge, the story is not atomic yet — that divergence *is* the
+per-model bias this gate exists to remove. Size and settle for the thinnest rung, regardless of
+which model actually runs `/solve`.
 
 **Too big (scope)** — any → decompose into an epic, or split the story:
 - Spans multiple independent capabilities or subsystems.
@@ -65,25 +78,25 @@ which model runs `/solve`.
   a data model, choose where state lives).
 - **Bugfix whose root cause isn't reproduced and confirmed.** Diagnosing an unknown failure is what
   budget models are worst at. While the cause is a hypothesis, make diagnosis its own story for a
-  planning model (Verification: human); the budget solver gets only the mechanical fix once the
+  frontier model (Verification: human); the budget solver gets only the mechanical fix once the
   cause is observed.
 
 ---
 
 ## Complexity Tier
 
-Budget-Solver Fit gates *scope and ambiguity* — every story reaching bd already fits a budget
-solver's working set. Complexity is a separate axis, judged only after that gate passes: a
-well-scoped, settled story can still call for more reasoning capability than raw execution. Judge it
-in addition to Budget-Solver Fit, never instead of it.
+The Atomicity Gate settles *scope and ambiguity* — every story reaching bd is already atomic, and so
+already fits a budget solver's working set. Complexity is a separate axis, judged only after that
+gate passes: an atomic story can still call for more reasoning capability than raw execution. Judge
+it in addition to the Atomicity Gate, never instead of it.
 
 Recommend the **cheapest tier + effort combination likely to succeed.**
 
 **Tiers** (ordinal — no model-ID pinning; the roster changes, the judgment shouldn't):
 - **budget** — mechanical: follows an existing pattern, low blast radius if subtly wrong.
-- **medium** — the cheaper end of the planning roster (e.g. Sonnet over Opus) or the strongest end of
-  the budget roster — whichever middle option the setup actually offers. One real difficulty signal
-  below, contained to a single well-understood area.
+- **medium** — the middle rung of the roster (e.g. Sonnet over Opus) — whichever middle option the
+  setup actually offers. One real difficulty signal below, contained to a single well-understood
+  area.
 - **frontier** — high blast radius if subtly wrong (security, auth, money, data loss), or the correct
   approach itself takes judgment (novel algorithm, non-obvious concurrency/ordering, reconciling
   constraints that look like they conflict).
@@ -111,7 +124,7 @@ or "no difficulty signal — mechanical" for budget.
 ## Verification Mode
 
 Every story states a `Verification` mode telling downstream whether a human checkpoint is needed:
-`auto`, `human`, or `auto+human`. (In this workflow every story is also reviewed at `/evaluate`
+`auto`, `human`, or `auto+human`. (In this workflow every story is also reviewed at `/validate`
 before merge; `Verification` is about whether the *solver* needs a person mid-slice.)
 
 - **`human`** — acceptance observed by a person exercising the running system, or needs judgment a
@@ -120,7 +133,7 @@ before merge; `Verification` is about whether the *solver* needs a person mid-sl
   exact/high-volume assertions; internal contract with no surface yet).
 - **`auto+human`** — the story has both a machine-assertable part and an experiential one: the
   solver auto-verifies the assertable part and spells out the experiential part for a person to
-  exercise at `/evaluate`.
+  exercise at `/validate`.
 - **Default when ambiguous → `human`.**
 
 ---

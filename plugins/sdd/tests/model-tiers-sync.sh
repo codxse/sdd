@@ -3,7 +3,7 @@
 # model-tiers-sync.sh — keep the Model Tiers map inlined in each SKILL.md byte-identical
 # to shared/model-tiers.md, the single source of truth.
 #
-# Every skill classifies its own model from its ID, and /evaluate pins its reviewer by
+# Every skill classifies its own model from its ID, and /validate pins its reviewer by
 # host — one set of rules, inlined into all five SKILL.md files rather than read from
 # shared/ at runtime. The map is a hard gate — every invocation needs it — so a runtime
 # read saves no context and costs a path that cannot be resolved reliably: a relative
@@ -32,11 +32,11 @@ esac
 
 python3 - "$mode" \
   "$PLUGIN_ROOT/shared/model-tiers.md" \
-  "$PLUGIN_ROOT/skills/case/SKILL.md" \
+  "$PLUGIN_ROOT/skills/specify/SKILL.md" \
   "$PLUGIN_ROOT/skills/refine/SKILL.md" \
   "$PLUGIN_ROOT/skills/orchestrate/SKILL.md" \
   "$PLUGIN_ROOT/skills/solve/SKILL.md" \
-  "$PLUGIN_ROOT/skills/evaluate/SKILL.md" <<'PY'
+  "$PLUGIN_ROOT/skills/validate/SKILL.md" <<'PY'
 import pathlib
 import sys
 

@@ -1,7 +1,7 @@
 ---
 name: solve
-description: 'Implement one bd story by id in an isolated git worktree+branch (created inside the repo at .worktree/<id>), ending at needs-review for /evaluate. Budget model expected; warns on a planning model, never blocks. --unattended (passed by /orchestrate when dispatching headless) replaces every live question with the existing spec-gap stop-and-hand-back — never pass it when running /solve yourself.'
-version: 1.8.0
+description: 'Implement one bd story by id in an isolated git worktree+branch (created inside the repo at .worktree/<id>), ending at needs-review for /validate. Runs on any tier — matched to the story''s own complexity call; warns on a frontier model solving a cheaper story, never blocks. --unattended (passed by /orchestrate when dispatching headless) replaces every live question with the existing spec-gap stop-and-hand-back — never pass it when running /solve yourself.'
+version: 1.9.0
 argument-hint: '[<story-id>] [--unattended]'
 disable-model-invocation: false
 user-invocable: true
@@ -9,7 +9,7 @@ user-invocable: true
 
 # Solve Skill
 
-Run as a budget-conscious solver. Read one story's contract from **bd** (the **WHAT**) and do the **HOW** yourself — exploration, mechanism choice, code, tests. The Acceptance Criteria are the contract: done only when every scenario passes. You work in an isolated **git worktree+branch** and end at **`needs-review`** — a human reviews and merges it via `/evaluate`. **You never merge or close.**
+Run as a budget-conscious solver. Read one story's contract from **bd** (the **WHAT**) and do the **HOW** yourself — exploration, mechanism choice, code, tests. The Acceptance Criteria are the contract: done only when every scenario passes. You work in an isolated **git worktree+branch** and end at **`needs-review`** — a human reviews and merges it via `/validate`. **You never merge or close.**
 
 **bd is the engine, not the interface.** The user typed `/solve <id>`; never show raw `bd` commands or output — translate (claim, status, labels, comments) and render human-friendly. Use the bd/git map below; if a flag is uncertain or a command errors, run `bd <cmd> --help`.
 
@@ -23,21 +23,31 @@ Classify the session's model **by its exact ID, never by self-assessed capabilit
 this" is not a reason to reclassify. Read the ID from the session environment / system prompt (it
 states one, e.g. `The exact model ID is claude-haiku-4-5`).
 
-- **budget** — the ID carries a cheap/fast-tier marker: contains `haiku`, `flash`, `mini`, `lite`,
-  `small`, `nano`, `luna`, or `kimi-k2`, or names a known budget tier (e.g. MiniMax-M-class, Gemini
-  Flash-class, `gpt-5-mini`/`gpt-5-nano`/`gpt-5.6-luna`, Kimi Code's `kimi-for-coding`). **A budget
-  marker outranks any planning marker below** — a hypothetical `qwen3.8-max-lite` is budget, not
-  planning.
-- **planning** — a known frontier tier: contains `opus`, `sonnet`, `fable`, or `mythos`, or a
-  Gemini Pro-class / frontier GPT-5-class (e.g. `gpt-5.5`, `gpt-5.6-sol`, `gpt-5.6-terra`) /
-  Qwen3.8-Max-class (e.g. `qwen3.8-max-preview`) / Kimi-K3-class (`k3`, `kimi-k3…`) / equivalent
-  high-tier model.
-- **unsure** — anything you cannot positively place in the planning list.
+Three rungs, ordered. Each rung is defined by **what the model can hold**, not by price alone — the
+ID list is how you recognize a rung, the definition is what the rung means:
 
-`planning` is the frontier tier; `budget` and `unsure` are not. A skill that gates on a planning
-model (`/case`, `/refine`, `/orchestrate`) proceeds only on `planning` and stops on `budget` **or**
-`unsure`; a skill that merely notes its tier (`/solve`) treats `planning` as frontier and the rest as
-budget.
+- **budget** — cheap and fast; thin reasoning, small effective attention. Reliable on bounded,
+  fully-specified work; drifts as ambiguity or scope grows. IDs containing `haiku`, `flash`, `mini`,
+  `lite`, `small`, `nano`, `luna`, or `kimi-k2`, or a known budget tier (MiniMax-M-class, Gemini
+  Flash-class, `gpt-5-mini`/`gpt-5-nano`/`gpt-5.6-luna`, Kimi Code's `kimi-for-coding`).
+- **medium** — solid reasoning at moderate cost; holds a larger working set. Handles one real
+  difficulty signal contained to a single well-understood area; not for high-blast-radius subtlety.
+  IDs containing `sonnet`, `gpt-5.5`, or `gpt-5.6-terra`, or a Gemini Pro-class model.
+- **frontier** — strongest reasoning available. For work where being subtly wrong is expensive, or
+  where the correct approach itself takes judgment. IDs containing `opus`, `fable`, `mythos`, or
+  `gpt-5.6-sol`, or a Qwen3.8-Max-class (e.g. `qwen3.8-max-preview`) / Kimi-K3-class (`k3`,
+  `kimi-k3…`) / equivalent top-tier model.
+- **unsure** — anything you cannot positively place on the ladder.
+
+**A budget marker outranks any higher marker** — a hypothetical `qwen3.8-max-lite` is budget, not
+frontier. Placeable on the ladder but unsure whether medium or frontier → treat it as **medium**.
+For a gated skill that means stopping, which is the safe direction: a false stop costs a line of
+output, a false pass costs a bad contract.
+
+**The gate.** A skill that gates on tier (`/specify`, `/refine`, `/orchestrate`) proceeds only on
+`frontier` and stops on `medium`, `budget`, **or** `unsure` — these three author the WHAT, where a
+subtly wrong contract is paid for by every later solve. A skill that merely notes its rung
+(`/solve`) reports it and continues on any of them. `/board` and `/validate` carry no tier gate.
 
 <!-- END SHARED -->
 
@@ -48,26 +58,26 @@ budget.
 `/solve` is designed for a **budget model** but runs on any. Read your model ID from your system prompt and derive two things:
 
 - **Your solver name** — the model's short class name (`haiku`, `sonnet`, `opus`, `fable`, `gpt-5.6-sol`, …), used as the bd assignee at claim time (step 3) so the story records which model picked it up.
-- **Your tier.** Classify the ID with the **Tier classification** rules in the Model Tiers section above: `planning` = frontier tier, which puts the **Senior Solver rules** (below) in effect for the whole run regardless of what the story turns out to need; anything else (`budget`/`unsure`) = budget tier, no special rules.
+- **Your tier.** Classify the ID with the **Tier classification** rules in the Model Tiers section above: `frontier` puts the **Senior Solver rules** (below) in effect for the whole run regardless of what the story turns out to need; `medium`, `budget`, and `unsure` carry no special rules.
 
 Whether a frontier tier is *worth flagging as expensive for this story* depends on the story itself — checked once it's resolved (step 1), not here.
 
 ## Environment Guard — Run Second
 
-- `.beads/` absent → the story can't exist; tell the user to author one with `/case <description>` first. Stop.
+- `.beads/` absent → the story can't exist; tell the user to author one with `/specify <description>` first. Stop.
 
 ## `--unattended` — no live human present
 
-Passed by `/orchestrate` when it dispatches this story headless inside its own subagent. **Never pass it yourself** when running `/solve <id>` directly — every ask-a-live-question path below works exactly as written without it. Under `--unattended`, wherever this skill would otherwise ask inline or invoke `AskUserQuestion`, treat the situation as unresolved instead and stop via the same mechanism already used for a spec-gap (Workflow step 4): stop, don't guess, hand back to the caller. A dispatched solver — often a budget-tier model — never makes an unsupervised judgment call to resolve an ambiguity itself; that stays a human's (or, under `/orchestrate`, the orchestrating planning-tier model's) job downstream, never this skill's.
+Passed by `/orchestrate` when it dispatches this story headless inside its own subagent. **Never pass it yourself** when running `/solve <id>` directly — every ask-a-live-question path below works exactly as written without it. Under `--unattended`, wherever this skill would otherwise ask inline or invoke `AskUserQuestion`, treat the situation as unresolved instead and stop via the same mechanism already used for a spec-gap (Workflow step 4): stop, don't guess, hand back to the caller. A dispatched solver — often a budget-tier model — never makes an unsupervised judgment call to resolve an ambiguity itself; that stays a human's (or, under `/orchestrate`, the orchestrating frontier-tier model's) job downstream, never this skill's.
 
 ## Division of Labor
 
-- The architect (`/case`, planning model) defined WHAT: Problem Statement, Constraints, Acceptance Criteria, Out of Scope.
+- The architect (`/specify`, frontier model) defined WHAT: Problem Statement, Constraints, Acceptance Criteria, Out of Scope.
 - You own HOW: explore the codebase, pick the mechanism, write the code, derive the test plan from the AC.
 
 ## Senior Solver Rules — frontier tier only
 
-The contract is written for a budget solver — a junior engineer who follows it literally. A frontier model on the same story is the senior picking up the same ticket: **the ticket does not grow.** If a budget model's implementation would pass `/evaluate`, yours must pass the same review — with better craft, not more surface.
+The contract is written for a budget solver — a junior engineer who follows it literally. A frontier model on the same story is the senior picking up the same ticket: **the ticket does not grow.** If a budget model's implementation would pass `/validate`, yours must pass the same review — with better craft, not more surface.
 
 - **Same scope, better craft.** Extra capability goes into quality *within* the AC — sharper naming, tighter tests, cleaner fit with existing patterns — never into features, abstractions, or "improvements" the contract doesn't ask for. Out of Scope binds every tier equally.
 - **Delegate exploration, keep decisions.** Keep codebase paging out of the senior solver's decision context. Dispatch the host's exploration-specialist subagent when available; otherwise dispatch a general subagent with the same bounded brief. Give it a strictly read-only task — search, inspect, and report; no edits, implementation, or mechanism decisions — and use the model suited to read-heavy exploration, not simply the cheapest model available (Claude Code: the `Explore` agent type with `model: haiku`; Codex: the built-in `explorer` agent). Seed it with the story's Files of Interest and the concrete questions you need answered (where the named artifacts live, which existing patterns/utilities apply, what the test harness looks like); it returns the map, you make every decision. Host has no subagents → explore yourself, but start from Files of Interest and read only what the AC needs.
@@ -94,7 +104,7 @@ Only two things are real: **the bd story** and **the actual codebase**. If a fac
 - `bd show <id>` → read the contract and its comments.
 - **Frontier cost check** (only if your tier from Model Check is frontier): read the story's `solver-*` label. `solver-frontier` → the story itself calls for this tier; say nothing. Any other label, or none → warn once:
 
-  > You're running `/solve` on `<model>` (expensive) for a story that doesn't call for it. Cheaper: `/clear`, then switch to a budget model via `/model`. Continuing now is fine too.
+  > You're running `/solve` on `<model>` (expensive) for a story that doesn't call for it. Cheaper: `/clear`, then switch to the rung the story's `solver-*` label asks for via `/model`. Continuing now is fine too.
 
   This warns; it never blocks.
 
@@ -104,13 +114,13 @@ Check the story's blockers (`bd ready` includes it only if unblocked; else inspe
 - **All blockers closed (ready) → proceed to step 3.**
 - **Has open blockers → STOP and reject with the reason**, then **offer to walk the chain**:
   > Story `<id>` is blocked by `<#Y "title"> (open)`. I can't start it yet. Want me to solve the blocker(s) first?
-  If two or more blockers are mutually independent, add that they can be solved in parallel. Each blocker still passes its own `/evaluate` merge before this story unblocks, so the chain can't run away. Proceed only on the user's go-ahead, and only on a blocker that is itself ready.
+  If two or more blockers are mutually independent, add that they can be solved in parallel. Each blocker still passes its own `/validate` merge before this story unblocks, so the chain can't run away. Proceed only on the user's go-ahead, and only on a blocker that is itself ready.
   **Exception — `--unattended`:** never offer or walk the chain — STOP, reject, post a one-line `bd comment` naming the open blocker(s), and stop. This should be rare under `/orchestrate` (it only ever dispatches stories `bd swarm status` already reports Ready); if it fires anyway, it's an anomaly for the caller to report, not a decision for `/solve` to make.
 
 ### 3. Claim & branch
 - `bd update <id> --claim --assignee <solver-name>` then `--status in_progress` — `<solver-name>` is your model class from the Model Check (`haiku`, `opus`, `gpt-5.6-sol`, …), so the story records which model picked it up. Claiming prevents another parallel session from grabbing the same story.
-- **Fresh story** → create the worktree off the repo's **current active branch** — the branch checked out in the main worktree right now (`git branch --show-current`), call it `<base>`. It may be the trunk (`main` or `master`) or a feature branch like `my-branch`; fork from whatever is checked out, **never hardcode `main`/`master`**. Branch `bd/<id>`, worktree **inside the repo** at `.worktree/<id>` (under the repo root) — keeping it on the same filesystem and permission scope as the project, which avoids the `/tmp`- and parent-dir permission errors a sibling worktree hits. First ensure `.worktree/` is git-excluded so it never surfaces as untracked in the main worktree: append `.worktree/` to `.git/info/exclude` if absent (idempotent, local-only, leaves the tracked `.gitignore` untouched). Do all work there. `/evaluate` lands the approved story back onto `<base>`, so record `<base>` in the review handoff (step 6).
-- **Resuming on an existing branch** (`bd/<id>` already exists — e.g. a contract sent back via `/refine`, or your own earlier in-progress work) → reuse that worktree; read the latest comment (`bd show <id>` includes comments) for the latest direction and address exactly that. Don't recreate the branch. (Implementation-only review fixes no longer come back here — `/evaluate` applies those in place via `/code-review`.)
+- **Fresh story** → create the worktree off the repo's **current active branch** — the branch checked out in the main worktree right now (`git branch --show-current`), call it `<base>`. It may be the trunk (`main` or `master`) or a feature branch like `my-branch`; fork from whatever is checked out, **never hardcode `main`/`master`**. Branch `bd/<id>`, worktree **inside the repo** at `.worktree/<id>` (under the repo root) — keeping it on the same filesystem and permission scope as the project, which avoids the `/tmp`- and parent-dir permission errors a sibling worktree hits. First ensure `.worktree/` is git-excluded so it never surfaces as untracked in the main worktree: append `.worktree/` to `.git/info/exclude` if absent (idempotent, local-only, leaves the tracked `.gitignore` untouched). Do all work there. `/validate` lands the approved story back onto `<base>`, so record `<base>` in the review handoff (step 6).
+- **Resuming on an existing branch** (`bd/<id>` already exists — e.g. a contract sent back via `/refine`, or your own earlier in-progress work) → reuse that worktree; read the latest comment (`bd show <id>` includes comments) for the latest direction and address exactly that. Don't recreate the branch. (Implementation-only review fixes no longer come back here — `/validate` applies those in place via `/code-review`.)
 - Parallelism = the user runs another `/solve <other-id>` in a separate session; each gets its own worktree.
 
 ### 4. Pre-flight Gate — earn the right to start
@@ -130,17 +140,17 @@ All four pass → execute (the sketches become your test plan). Any fail → **d
 - **Plan**: brief, verifiable, assumptions surfaced. A step with no clear verify → contract too weak → Needs Clarification (see *Stop on Ambiguity* below).
 - **Diagnose before fixing** (Bugfix): the contract states a *suspected* cause — treat it as a lead. Reproduce and capture the real signal (exception+stack, failing assertion, real status/body, the log at the failure point) before editing. Device/integration bug you can't unit-test → your first change is the minimum logging to surface what actually happens, not a behavior change. Captured signal contradicts the stated cause → the contract is wrong: Needs Clarification, not more guessing. Don't grind on an unobserved cause.
 - **TDD**: translate the machine-assertable AC into test(s) → run red → implement minimum to green → refactor within the slice, staying green.
-  - **Don't mock the thing under test.** If an AC is about an external boundary (SDK, network, DB driver, device API), a test stubbing that exact boundary proves nothing. Green from a mocked boundary is not acceptance — exercise the real boundary, or recognise the AC needs a `human`/`auto+human` check at `/evaluate` and say so.
-  - No test harness, or an AC genuinely can't be automated → fall back to a concrete runtime observation and flag it for the `/evaluate` checkpoint. Can't write a test for an AC at all → Stop-on-Ambiguity ("AC not verifiable as written").
+  - **Don't mock the thing under test.** If an AC is about an external boundary (SDK, network, DB driver, device API), a test stubbing that exact boundary proves nothing. Green from a mocked boundary is not acceptance — exercise the real boundary, or recognise the AC needs a `human`/`auto+human` check at `/validate` and say so.
+  - No test harness, or an AC genuinely can't be automated → fall back to a concrete runtime observation and flag it for the `/validate` checkpoint. Can't write a test for an AC at all → Stop-on-Ambiguity ("AC not verifiable as written").
   - **Design / Investigation** stories → no TDD; produce the deliverable, verify against Deliverable Format.
 - **Verify** every AC: positive AND regression. Fix failures you understand; a blocking gap → stop.
 
 ### 6. Hand to review — never merge
 When the AC pass:
 - Commit on branch `bd/<id>`.
-- `bd label add <id> needs-review` and post a `bd comment` summarising for the reviewer: **Base branch:** `<base>` (the branch this was forked from — where `/evaluate` lands it on approve), **what was built + how to exercise it** (for a `human`/`auto+human` Verification, spell out exactly what a person should check and the command/screen/input), **files changed** (one line each, every line traceable to an AC), and any AC that fell back to a runtime observation. If you noticed anything out of scope while working — an adjacent bug, an unclear contract spot, a refactor worth doing — close the comment with a **Recommendations** section, one line each, explicitly *not implemented*: the reviewer decides whether to address it at `/evaluate` or file it as a separate story. No observations → omit the section.
+- `bd label add <id> needs-review` and post a `bd comment` summarising for the reviewer: **Base branch:** `<base>` (the branch this was forked from — where `/validate` lands it on approve), **what was built + how to exercise it** (for a `human`/`auto+human` Verification, spell out exactly what a person should check and the command/screen/input), **files changed** (one line each, every line traceable to an AC), and any AC that fell back to a runtime observation. If you noticed anything out of scope while working — an adjacent bug, an unclear contract spot, a refactor worth doing — close the comment with a **Recommendations** section, one line each, explicitly *not implemented*: the reviewer decides whether to address it at `/validate` or file it as a separate story. No observations → omit the section.
 - **Do not close, do not merge.** Tell the user:
-  > Story `<id>` done, on branch `bd/<id>`, now in **DONE · review & merge**. Run `/evaluate <id>` to review the diff in VSCode and merge.
+  > Story `<id>` done, on branch `bd/<id>`, now in **DONE · review & merge**. Run `/validate <id>` to review the diff in VSCode and merge.
 
 ## Stop on Ambiguity — Do Not Loop
 
@@ -173,4 +183,4 @@ When stopped: emit a **Needs Clarification** report — each gap (one line, conc
 | spec-gap / clarification | `bd label add <id> needs-refinement` + `bd comment` |
 | done → review | `bd label add <id> needs-review` + `bd comment` (commit on `bd/<id>`) |
 
-Single-writer discipline: `/solve` claims, branches, codes, and hands to review. It never closes a story or merges a branch — that is `/evaluate`'s job. It never edits the contract body — that is `/case`'s (new) and `/refine`'s (revise).
+Single-writer discipline: `/solve` claims, branches, codes, and hands to review. It never closes a story or merges a branch — that is `/validate`'s job. It never edits the contract body — that is `/specify`'s (new) and `/refine`'s (revise).

@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 #
-# authoring-format.sh — verify /case AUTHORS to the contract format on a planning
+# authoring-format.sh — verify /specify AUTHORS to the contract format on a planning
 # model. The companion to model-guard.sh: that one asserts a budget model STOPS;
-# this one asserts a planning model FOLLOWS — it drafts a `.case.md` that obeys the
+# this one asserts a frontier model FOLLOWS — it drafts a `.spec.md` that obeys the
 # Output Format and branches Story vs Epic by size (the "Authoring: Story vs Epic"
-# section of skills/case/SKILL.md).
+# section of skills/specify/SKILL.md).
 #
-# In headless single-turn mode the Staging Loop writes the draft to `.case.md` and
+# In headless single-turn mode the Staging Loop writes the draft to `.spec.md` and
 # stops before the user's commit confirmation, so the draft IS the artifact we
 # grade. A trial PASSES when:
-#   * the guard did NOT falsely refuse a planning model, AND
-#   * `.case.md` exists, AND
+#   * the guard did NOT falsely refuse a frontier model, AND
+#   * `.spec.md` exists, AND
 #   * STORY case  → exactly one contract: 1 `Acceptance Criteria` heading, a
 #                   ```gherkin fence, and the core sections (Problem Statement /
 #                   Constraints / Verification / Out of Scope).
@@ -30,7 +30,7 @@
 # Usage:
 #   tests/claude/authoring-format.sh [-n TRIALS] [-m MODEL] [-v] [--no-sync]
 #     -n  trials per description  (default 2)
-#     -m  planning model alias    (default sonnet)
+#     -m  frontier model alias    (default opus)
 #     -v  verbose: print each trial's raw output and the draft
 #     --no-sync  skip overlaying the working tree onto the install
 #
@@ -40,7 +40,7 @@ set -u
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 TRIALS=2
-MODEL=sonnet
+MODEL=opus
 VERBOSE=0
 SYNC=1
 args=()
@@ -77,28 +77,28 @@ run_trial() {
   local kind="$1" desc="$2" dir out draft
   dir=$(mktemp -d)
   ( cd "$dir" && git init -q )
-  out=$( cd "$dir" && timeout 300 claude -p "/case $desc" \
+  out=$( cd "$dir" && timeout 300 claude -p "/specify $desc" \
            --model "$MODEL" --permission-mode bypassPermissions 2>&1 )
 
   local infra
   if infra=$(infra_error "$out"); then
     rm -rf "$dir"
-    { printf '\n--- ERROR [%s %s] /case %s\n    %s\n' "$MODEL" "$kind" "$desc" "$infra"; } >>"$FAILLOG"
+    { printf '\n--- ERROR [%s %s] /specify %s\n    %s\n' "$MODEL" "$kind" "$desc" "$infra"; } >>"$FAILLOG"
     [ "$VERBOSE" -eq 1 ] && printf '  ERROR: %s\n' "$infra"
     return 2
   fi
 
   local -a problems=()
 
-  # The guard must NOT refuse a planning model. (The diagnostic `tier=planning`
+  # The guard must NOT refuse a frontier model. (The diagnostic `tier=frontier`
   # line isn't reliably surfaced in headless final output, so we don't require it;
-  # successful authoring below is itself proof the guard let a planning model pass.
+  # successful authoring below is itself proof the guard let a frontier model pass.
   # The budget-STOP direction is covered by model-guard.sh.)
-  grep -qiE 'must run on a planning model' <<<"$out" && problems+=("falsely refused a planning model")
+  grep -qiE 'must run on a frontier model' <<<"$out" && problems+=("falsely refused a frontier model")
 
-  draft="$dir/.case.md"
+  draft="$dir/.spec.md"
   if [ ! -f "$draft" ]; then
-    problems+=("no .case.md draft written")
+    problems+=("no .spec.md draft written")
   else
     local body ac_count
     body=$(cat "$draft")
@@ -130,7 +130,7 @@ run_trial() {
     return 0
   fi
   {
-    printf '\n--- FAIL [%s %s] /case %s\n' "$MODEL" "$kind" "$desc"
+    printf '\n--- FAIL [%s %s] /specify %s\n' "$MODEL" "$kind" "$desc"
     local p; for p in "${problems[@]}"; do printf '    - %s\n' "$p"; done
     printf '    output:\n'; sed 's/^/    | /' <<<"$out"
   } >>"$FAILLOG"

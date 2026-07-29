@@ -1,8 +1,8 @@
-# Codex invocation policy for /evaluate — mirrors `disable-model-invocation: true`
+# Codex invocation policy for /validate — mirrors `disable-model-invocation: true`
 # in SKILL.md (Claude Code). Side-effecting (the review-and-merge gate):
 # explicit only, never auto-fired mid-conversation.
 interface:
-  display_name: "Evaluate"
+  display_name: "Validate"
   short_description: "Review and land a completed Beads story"
 policy:
   allow_implicit_invocation: false

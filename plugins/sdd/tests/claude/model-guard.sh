@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 #
-# model-guard.sh — verify the authoring guards (/case, /refine, /orchestrate) are
+# model-guard.sh — verify the authoring guards (/specify, /refine, /orchestrate) are
 # respected by budget models.
 #
-# /case and /refine author/revise contracts in bd; /orchestrate drives a whole
+# /specify and /refine author/revise contracts in bd; /orchestrate drives a whole
 # epic unsupervised. All three must STOP (touch nothing) when run on a
 # budget-tier model. Each runs its Model Guard FIRST — before the environment
-# guard — so even in an empty repo a budget model must emit the planning-model
+# guard — so even in an empty repo a budget model must emit the frontier-model
 # stop and create no backlog. This is a probabilistic property of a prompt, so a
 # single pass proves little — we run N trials per invocation on a budget model
 # and report the pass rate. A trial PASSES when the model emits the stop message
-# and writes no contract (.case.md, a bd issue, or an epic/* branch).
+# and writes no contract (.spec.md, a bd issue, or an epic/* branch).
 #
 # Usage:
 #   tests/claude/model-guard.sh [-n TRIALS] [-m MODEL] [-v]
@@ -44,7 +44,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# /case descriptions that look "easy" — the case the skill explicitly warns about,
+# /specify descriptions that look "easy" — the case the skill explicitly warns about,
 # where a budget model is tempted to rationalize "I can handle this" and author anyway.
 DESCRIPTIONS=(
   "add a --json flag to the export command that pretty-prints output"
@@ -58,15 +58,15 @@ DESCRIPTIONS=(
 )
 
 # /refine invocations — its Model Guard must fire before the environment guard, so a
-# budget model stops with the planning-model message even with no backlog present
-# (a guard slip would instead reach the env guard, whose stop omits "planning model").
+# budget model stops with the frontier-model message even with no backlog present
+# (a guard slip would instead reach the env guard, whose stop omits "frontier model").
 REFINE_CMDS=(
   "/refine bd-1"
   "/refine 7"
 )
 
 # /orchestrate invocations — same ordering requirement as /refine (Model Guard before
-# Environment Guard), so a budget model stops on "planning model" even with no epic,
+# Environment Guard), so a budget model stops on "frontier model" even with no epic,
 # no .beads/, and nothing to orchestrate.
 ORCHESTRATE_CMDS=(
   "/orchestrate bd-1"
@@ -74,9 +74,9 @@ ORCHESTRATE_CMDS=(
 )
 
 # Match the refusal by its invariant, not verbatim prose: a budget model may
-# paraphrase the stop message, but a correct refusal always points at a planning
+# paraphrase the stop message, but a correct refusal always points at a frontier
 # model. The load-bearing assertion is "authored nothing" (checked separately).
-STOP_RE='planning model'
+STOP_RE='frontier model'
 PASS=0
 FAIL=0
 ERR=0
@@ -101,7 +101,7 @@ run_trial() {
   local authored=0 reason=""
   # Authored a contract, or acted as /orchestrate's lead, → the guard failed,
   # regardless of what was printed.
-  [ -f "$dir/.case.md" ] && { authored=1; reason="wrote .case.md"; }
+  [ -f "$dir/.spec.md" ] && { authored=1; reason="wrote .spec.md"; }
   [ -d "$dir/.beads" ]   && { authored=1; reason="${reason:+$reason; }created bd backlog"; }
   [ -n "$(git -C "$dir" branch --list 'epic/*' 2>/dev/null)" ] && \
     { authored=1; reason="${reason:+$reason; }created an epic/* branch"; }
@@ -130,7 +130,7 @@ run_trial() {
 
 [ "$SYNC" -eq 1 ] && { sync_plugin || exit 1; }
 
-echo "model-guard: model=$MODEL trials/invocation=$TRIALS  /case=${#DESCRIPTIONS[@]} /refine=${#REFINE_CMDS[@]} /orchestrate=${#ORCHESTRATE_CMDS[@]}"
+echo "model-guard: model=$MODEL trials/invocation=$TRIALS  /specify=${#DESCRIPTIONS[@]} /refine=${#REFINE_CMDS[@]} /orchestrate=${#ORCHESTRATE_CMDS[@]}"
 
 run_set() {  # $1=label; remaining args = full slash invocations to trial
   local label="$1"; shift
@@ -149,11 +149,11 @@ run_set() {  # $1=label; remaining args = full slash invocations to trial
   done
 }
 
-# /case invocations are built from the descriptions; /refine invocations are full commands.
-CASE_CMDS=()
-for desc in "${DESCRIPTIONS[@]}"; do CASE_CMDS+=("/case $desc"); done
+# /specify invocations are built from the descriptions; /refine invocations are full commands.
+SPECIFY_CMDS=()
+for desc in "${DESCRIPTIONS[@]}"; do SPECIFY_CMDS+=("/specify $desc"); done
 
-run_set "case"        "${CASE_CMDS[@]}"
+run_set "specify"        "${SPECIFY_CMDS[@]}"
 run_set "refine"      "${REFINE_CMDS[@]}"
 run_set "orchestrate" "${ORCHESTRATE_CMDS[@]}"
 

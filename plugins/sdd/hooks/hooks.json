@@ -1,5 +1,5 @@
 {
-  "description": "Prime the session with sdd command awareness (/case /refine /solve /evaluate /board) on start and before compaction",
+  "description": "Prime the session with sdd command awareness (/specify /refine /solve /validate /board) on start and before compaction",
   "hooks": {
     "SessionStart": [
       {

@@ -1,6 +1,6 @@
 {
   "name": "sdd",
-  "description": "Codex plugins by nadiar: a bd-backed workflow (/case, /refine, /board, /solve, /evaluate, /orchestrate) and context-writing helpers. Shares one skills/ tree with the Claude Code build.",
+  "description": "Codex plugins by nadiar: a bd-backed workflow (/specify, /refine, /board, /solve, /validate, /orchestrate) and context-writing helpers. Shares one skills/ tree with the Claude Code build.",
   "plugins": [
     {
       "name": "sdd",
