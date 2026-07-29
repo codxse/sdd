@@ -66,7 +66,7 @@ publish the same two plugins under `plugins/`:
   merely warned: a subtly wrong contract is paid for by every later solve.
   The **HOW** runs on whatever rung the story asks for: `/solve` writes code in an isolated
   worktree+branch and carries no gate. The human tier is
-  `/validate`, the review-and-merge gate; its request-changes path doesn't bounce work back to
+  `/validate`, the review-and-merge gate; its review pass doesn't bounce work back to
   `/solve` but **delegates the fix to a rung-pinned `/code-review` subagent**, which applies it
   in place on `bd/<id>` and amends — `/validate` carries no model gate, so the reviewer's model is
   pinned explicitly, never below `medium`, rather than inherited. Review-time

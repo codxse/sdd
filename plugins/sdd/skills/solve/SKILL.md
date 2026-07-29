@@ -1,7 +1,7 @@
 ---
 name: solve
 description: 'Implement one bd story by id in an isolated git worktree+branch at .worktree/<id>, ending at needs-review for /validate. Any tier — matched to the story''s own complexity call. --unattended (passed by /orchestrate when dispatching headless) turns every live question into the spec-gap stop-and-hand-back — never pass it yourself.'
-version: 1.10.0
+version: 1.10.1
 argument-hint: '[<story-id>] [--unattended]'
 disable-model-invocation: false
 user-invocable: true
@@ -139,7 +139,7 @@ When the AC pass:
 - Commit on branch `bd/<id>`.
 - `bd label add <id> needs-review` and post a `bd comment` summarising for the reviewer: **Base branch:** `<base>` (the branch this was forked from — where `/validate` lands it on approve), **what was built + how to exercise it** (for a `human`/`auto+human` Verification, spell out exactly what a person should check and the command/screen/input), **files changed** (one line each, every line traceable to an AC), and any AC that fell back to a runtime observation. If you noticed anything out of scope while working — an adjacent bug, an unclear contract spot, a refactor worth doing — close the comment with a **Recommendations** section, one line each, explicitly *not implemented*: the reviewer decides whether to address it at `/validate` or file it as a separate story. No observations → omit the section.
 - **Do not close, do not merge.** Tell the user:
-  > Story `<id>` done, on branch `bd/<id>`, now in **DONE · review & merge**. Run `/validate <id>` to review the diff in VSCode and merge.
+  > Story `<id>` done, on branch `bd/<id>`, now in **DONE · review & merge**. Run `/validate <id>` to review and merge.
 
 ## Stop on Ambiguity — Do Not Loop
 

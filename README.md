@@ -153,7 +153,7 @@ cp ~/.kimi-code/plugins/managed/sdd/plugins/sdd/agents/*.md ~/.agents/agents/
 update.) With them, `/validate` spawns `story-reviewer` — the reviewer prompt and narrowed tools
 come from the definition — but the model pin can't: Kimi ignores the `model:` field, so the
 reviewer runs on the session's own model. One rung on this host either way: the
-request-changes path needs a frontier (K3-class) session, and on a budget session
+review pass needs a frontier (K3-class) session, and on a budget session
 (`kimi-for-coding`, K2-class) it stops rather than review on a budget model.
 
 **Custom models (a router / custom host):** the plugin also runs on Claude Code pointed at a
@@ -324,10 +324,11 @@ whatever rung the story's own complexity call asks for:
 On **any model**:
 
 - **`/board`** → backlog, in progress, awaiting merge, blocked. `/board <id>` shows one story.
-- **`/validate [<id>]`** → opens the branch in **VSCode** to review the diff, then enacts your
-  verdict: **approve** merges to `main`, closes the story, unblocks dependents; **request changes**
-  sends feedback to `/solve` or `/refine`. Flags skip VSCode: `--approve`, `--request-changes`,
-  `--note <text>` (on either path).
+- **`/validate [<id>]`** → runs a code-review pass over the branch (effort `high`) and applies its
+  fixes in the worktree, then enacts your verdict: **approve** lands it on the branch it was forked
+  from, closes the story, unblocks dependents; or another pass; or a wrong contract routes to
+  `/refine`. `--approve` lands with no review pass, `--review <effort>` picks a different effort,
+  `--note <text>` steers the review or annotates the story.
 
 ### Typical flow
 

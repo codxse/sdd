@@ -11,6 +11,25 @@ shipped at the time — `case-solvers` — and are left as written.
 
 ## [Unreleased]
 
+**`/validate` reviews first, asks second — and no longer assumes VSCode.** Bare `/validate <id>` used
+to open the story's worktree in VSCode and ask "approve, or request changes?" before the human had
+necessarily read anything. Two problems: it hardcoded one editor (and `code .worktree/<id>` opens a
+*folder*, not a diff), and it wanted a verdict before there was evidence to cast one over.
+
+The default flow is now a `/code-review` pass at effort `high` — the same rung-pinned reviewer
+`--review` always used — and the verdict comes after, over the reviewer's findings and applied diff.
+Step 3's question grew a third answer: **approve & merge**, **another pass**, or **the contract is
+wrong** → `/refine`. That last route used to be asked upfront, before anything was known; it now sits
+where the human can actually answer it. `--approve` is the way to land a story with no review pass at
+all, and `--review [effort]` now only picks a different effort rather than selecting a different path.
+`--unattended` with no `--approve` means the review pass, unchanged.
+
+Nowhere does the workflow name an editor now: `/validate` prints the worktree path, the branch, and
+the `git diff <base>...bd/<id>` command, and the human opens it in whatever they use. Calibration
+(step 4a.7) re-keys from "interactive flow only" — a flow that no longer exists — to "a human is
+present and a review pass ran", so it skips under `--approve` and `--unattended`. Skill versions:
+`/validate` `1.17.0`, `/solve` `1.10.1` (handoff line).
+
 **Removed the Problem Types taxonomy.** Stories were classified as Feature / Bugfix / Refactor /
 Design / Investigation, and five places downstream branched on that classification — but the type
 was never recorded anywhere. It is not a template section, not a bd label, and bd's own `-t` is
