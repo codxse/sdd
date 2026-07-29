@@ -41,8 +41,10 @@ helpers live under each host directory; `tests/lib.sh` keeps only the host-agnos
 
 **Kimi Code breaks the per-plugin manifest pattern.** Its GitHub install reads the manifest at the
 *repository* root only, so instead of per-plugin `.kimi-plugin/` dirs there is a single root
-`kimi.plugin.json` declaring both `skills/` trees — both marketplace plugins ship to Kimi as one
-plugin named `sdd`. The manifest also ports the session-primer hook (`SessionStart` +
+`kimi.plugin.json` declaring every `skills/` tree — all three marketplace plugins ship to Kimi as one
+plugin named `sdd`. Its root `version` therefore tracks the *bundle*, not the `sdd` plugin: adding or
+removing a skill tree bumps it even when `plugins/sdd/` itself is untouched (`3.1.0` added
+`code-review-quality` while `sdd` stayed `3.0.0`). The manifest also ports the session-primer hook (`SessionStart` +
 `PreCompact`) via its `hooks` field, with `$KIMI_PLUGIN_ROOT` in place of `${CLAUDE_PLUGIN_ROOT}`.
 It carries a third hook the other hosts don't need: **`UserPromptSubmit` →
 `hooks/kimi-model-context.sh`**, which supplies the model ID Kimi never states. No Kimi hook payload
@@ -67,10 +69,16 @@ Kimi rests on skill prose.
 ## What this is
 
 `.claude-plugin/marketplace.json` (Claude Code) and `.agents/plugins/marketplace.json` (Codex)
-publish the same two plugins under `plugins/`:
+publish the same three plugins under `plugins/`:
 
 - **sdd** — `/specify`, `/refine`, `/board`, `/solve`, `/validate`, `/orchestrate`: a
   bd-backed, parallel-capable coding workflow.
+- **code-review-quality** — `/code-review-quality`: multi-axis review of a change before merge.
+  Standalone — no bd, no worktrees, no model gate. Report-only by default; `--fix true` applies the
+  findings and leaves them uncommitted. Deliberately *not* an `sdd` skill: it shares none of that
+  plugin's bd machinery. `sdd`'s own review path reaches it the other way round: `/validate`'s reviewer
+  agents prefer `/code-review-quality` and fall back to the host's `/code-review` when this plugin
+  isn't installed — a preference, never a dependency.
 - **writing-claude-md** — `/writing-claude-md`: authoring lean, high-signal context files.
 
 ## Philosophy (this drives how every skill is worded)
@@ -85,7 +93,7 @@ publish the same two plugins under `plugins/`:
   The **HOW** runs on whatever rung the story asks for: `/solve` writes code in an isolated
   worktree+branch and carries no gate. The human tier is
   `/validate`, the review-and-merge gate; its review pass doesn't bounce work back to
-  `/solve` but **delegates the fix to a rung-pinned `/code-review` subagent**, which applies it
+  `/solve` but **delegates the fix to a rung-pinned reviewer subagent**, which applies it
   in place on `bd/<id>` and amends — `/validate` carries no model gate, so the reviewer's model is
   pinned explicitly, never below `medium`, rather than inherited. Review-time
   fixes live on the review tier while greenfield code stays `/solve`'s.
@@ -118,7 +126,10 @@ publish the same two plugins under `plugins/`:
   they never auto-fire mid-conversation. The rest are model-invocable so plain-English asks route to
   them: `/board` (read-only), `/refine` (names an id), `/specify` (authors a new story/epic — a
   plain-English ask like "let's put our problem to a case" should reach it), and `/orchestrate`
-  (drives an epic). `/specify` and `/refine` write to bd but are backstopped the same way: the
+  (drives an epic). `/code-review-quality` is model-invocable too — report-only is its default, and
+  the one path that edits files (`--fix true`) is honored **only when the caller typed the flag**, so
+  an implicit invocation can never reach it; that typed-flag rule is what keeps the blast radius of an
+  auto-fire at zero, not the flag's default. `/specify` and `/refine` write to bd but are backstopped the same way: the
   frontier-tier **Model Guard** runs first and **nothing is committed to bd until the user confirms**.
   `/orchestrate` also runs its Model Guard before touching bd or git, and creates only a provisional
   epic branch and final PR for human review. Model-invocable skills carry no
@@ -136,7 +147,9 @@ publish the same two plugins under `plugins/`:
 - Bump the skill's frontmatter `version` and add a `CHANGELOG.md` entry in the same change. The
   marketplace/plugin `version` tracks the published plugin, not the per-skill frontmatter versions —
   bump it in **all five** manifests (`.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`,
-  both marketplaces, and the repo-root `kimi.plugin.json`) so the three hosts stay in lockstep.
+  both marketplaces, and the repo-root `kimi.plugin.json`) so the three hosts stay in lockstep. For a
+  plugin other than `sdd`, the same rule reads: its own two `plugin.json`s, its entry in both
+  marketplaces, and the kimi root (which versions the whole bundle — see above).
 - `/specify` and `/refine` share the contract rubrics in `plugins/sdd/shared/contract-rubrics.md`
   (Atomicity Gate, AC Quality Rubric, Pre-write Guard, Output Format). That file is
   the single source, but it is **not read at runtime**: everything below its `BEGIN SHARED` marker is
@@ -165,6 +178,10 @@ publish the same two plugins under `plugins/`:
   `plugins/sdd/tests/model-tiers-sync.sh --write`; never hand-edit a skill's generated block.
   The script with no flag verifies all five copies and fails on drift — pure text comparison, wired
   into CI like `rubrics-sync.sh`. Adding a model (or a host) is a one-file edit here, not five.
+  - **`code-review-quality` is intentionally outside that set** — it lives in another plugin and gates
+    on nothing, so it carries **no tier block and no tier vocabulary at all**. Don't add one: syncing
+    it would make one plugin's generated content depend on another plugin's file, and there is nothing
+    in it for a rung to decide.
   - **Reviewer pinning lives natively in `skills/validate/SKILL.md`** (moved there in 2.24.1 —
     `/validate` is its sole consumer — so it is *not* part of the synced block) and keys off host
     *capability*, not a host list. A native Claude/Codex host

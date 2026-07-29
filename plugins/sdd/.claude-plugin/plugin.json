@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "sdd",
   "displayName": "SDD",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "A bd-backed, parallel-capable coding workflow: /specify (frontier model) authors stories/epics in Beads and /refine revises them, /board renders the backlog, /solve (any tier) implements one in an isolated git worktree, /validate merges it after human review, /orchestrate (frontier model) automates the solve-review-land loop for a whole epic behind one final PR. Dependency-aware; bd stays hidden behind the commands. Requires the bd (Beads) CLI.",
   "author": { "name": "nadiar", "email": "codex@nadiar.id" },
   "homepage": "https://github.com/codxse/sdd",

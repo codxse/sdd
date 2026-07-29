@@ -1,7 +1,7 @@
 ---
 name: validate
-description: 'Human review gate for a needs-review story by id: runs a review pass at effort high via a rung-pinned /code-review subagent that applies fixes in place on bd/<id>, then enacts your verdict — approve (land it on the branch it was forked from, close, unblock dependents), another pass, or a wrong contract routed to /refine. --approve lands with no review pass; --review [effort] picks a different effort; --note <text> steers the review or annotates the story. --unattended is for /orchestrate driving a run onto a provisional epic branch — never for a human approving straight to master/main.'
-version: 1.17.1
+description: 'Human review gate for a needs-review story by id: runs a review pass at effort high via a rung-pinned reviewer subagent that applies fixes in place on bd/<id>, then enacts your verdict — approve (land it on the branch it was forked from, close, unblock dependents), another pass, or a wrong contract routed to /refine. --approve lands with no review pass; --review [effort] picks a different effort; --note <text> steers the review or annotates the story. --unattended is for /orchestrate driving a run onto a provisional epic branch — never for a human approving straight to master/main.'
+version: 1.18.0
 argument-hint: '[<story-id>] [--approve [--unattended]] [--review [effort] [--unattended]] [--note <text>]'
 disable-model-invocation: false
 user-invocable: true
@@ -9,7 +9,7 @@ user-invocable: true
 
 # Validate Skill
 
-The human review gate. A story finished by `/solve` sits in **`needs-review`** on branch `bd/<id>`. You run a `/code-review` pass over the branch, then put its findings in front of the **human**, who decides what happens to the story — **you never judge the code yourself.** Never show raw `bd`/`git` output; translate and render human-friendly. Use the map below; if a flag is uncertain or a command errors, run `bd <cmd> --help`.
+The human review gate. A story finished by `/solve` sits in **`needs-review`** on branch `bd/<id>`. You run a review-and-apply pass over the branch, then put its findings in front of the **human**, who decides what happens to the story — **you never judge the code yourself.** Never show raw `bd`/`git` output; translate and render human-friendly. Use the map below; if a flag is uncertain or a command errors, run `bd <cmd> --help`.
 
 ## Model Tiers
 
@@ -89,7 +89,7 @@ Rules that bind every branch:
 
 **The default is a review pass, not a question.** Bare `/validate <id>` reviews before it asks anything, so the human's verdict at step 3 is cast over the reviewer's findings rather than over an unread diff. `--approve` is the way to land a story with no review pass at all.
 
-`effort` is `low`, `high`, or `max`; omit it for `high`. Whatever you get is passed through to the host's `/code-review` unchanged — don't validate or rewrite it. `--note` is orthogonal: it annotates the story on any path, and additionally steers the reviewer wherever a review pass runs. `--unattended` removes the human: under a review pass it skips the amend-confirm (step 4b.3); under `--approve` it changes step 4a.4's conflict-gate behavior (below). 4a's merge-conflict confidence gate applies in all paths — fast-pathing the verdict does not bypass conflict resolution.
+`effort` is `low`, `high`, or `max`; omit it for `high`. Whatever you get is passed through to the reviewer unchanged — don't validate or rewrite it. `--note` is orthogonal: it annotates the story on any path, and additionally steers the reviewer wherever a review pass runs. `--unattended` removes the human: under a review pass it skips the amend-confirm (step 4b.3); under `--approve` it changes step 4a.4's conflict-gate behavior (below). 4a's merge-conflict confidence gate applies in all paths — fast-pathing the verdict does not bypass conflict resolution.
 
 Story id: use the argument if supplied. If omitted but a story was mentioned earlier in this session, use that. If still unknown, go to step 1.
 
@@ -110,7 +110,7 @@ The human decides with the reviewer's findings and applied diff already in front
 
 - **Approve & merge** → 4a.
 - **Another pass** → back to 4b, optionally at a different effort or with steering.
-- **The contract itself is wrong** → `/code-review` can't fix a wrong spec. `bd label add <id> needs-refinement` + a `bd comment` with the reason (if not already recorded via `--note`), remove `needs-review`. Tell the user: `/refine <id>` to fix the contract first, then `/solve <id>`.
+- **The contract itself is wrong** → no reviewer can fix a wrong spec. `bd label add <id> needs-refinement` + a `bd comment` with the reason (if not already recorded via `--note`), remove `needs-review`. Tell the user: `/refine <id>` to fix the contract first, then `/solve <id>`.
 
 ### 4a. Approve → merge, close, unblock
 1. If `--note <text>` was supplied, record it as a `bd comment` on the story first.
@@ -124,7 +124,7 @@ The human decides with the reviewer's findings and applied diff already in front
 6. Report: landed on `<base>`, closed, and the newly-unblocked stories (`/solve <id>` to pick one).
 7. **Calibration** (skip under `--approve` and `--unattended` — no review pass ran, or no human is present): if the story carries a `solver-*` label, ask once whether the recommended tier matched how it actually went (e.g. "solved cleanly at budget as recommended" vs "needed more than expected"). Record the answer as a `bd comment` if given; skip silently if the human has no opinion. Never blocks or delays the merge that already happened above — this is a data point for judging the Complexity Tier rubric's accuracy over time, nothing else.
 
-### 4b. The review pass → fix in place via /code-review
+### 4b. The review pass → fix in place via the reviewer subagent
 If `--note <text>` was supplied, record it as a `bd comment` now (before anything else).
 
 The story never bounces back to `/solve`; the branch is fixed in place by delegating the review to a **medium-or-better model**:
@@ -133,11 +133,11 @@ The story never bounces back to `/solve`; the branch is fixed in place by delega
    - **Under `--unattended`** → the rung the story's own Complexity call asks for, read from its `solver-*` label (already in step 1's `bd show`): `solver-budget` or `solver-medium` → the **medium** rung; `solver-frontier`, or no `solver-*` label → the **frontier** rung. An orchestrated epic pays for many reviews, so each one costs what its own story warrants rather than a flat top rate. **Same-rung step-up:** if the recorded assignee (the claim in `bd show`) classifies at the same rung as the reviewer this would pick, go up one rung instead — a model never reviews its own class's work. A budget assignee therefore never triggers it; a medium reviewer over a budget solver's diff is the intended cheap path, not a conflict.
 
    Where the host offers only one rung, every choice above collapses onto it — the rule degrades to a single pin, it never errors. The floor never moves: **medium or better, always.**
-2. Inside that subagent, run `/code-review <effort> --fix` scoped to the story's worktree (`.worktree/<id>`), handing it the contract as context — the **WHAT** + Acceptance Criteria from `bd show <id>` — as what the diff must satisfy, plus any `--note <text>` as steering ("focus on …"). `<effort>` is the level passed on `--review`, or `high` when none was. It reviews the `bd/<id>` diff and applies its findings to the worktree in place — **leaving them unstaged/uncommitted.**
+2. Hand that subagent everything the review needs and let its own definition choose the reviewing command: the story id, the worktree path (`.worktree/<id>`), the **base branch `<base>`** the story was forked from (resolved per 4a.2 — the reviewer needs it to diff `<base>...bd/<id>` and must not guess `main`), the contract — the **WHAT** + Acceptance Criteria from `bd show <id>` — as what the diff must satisfy, the effort `<effort>` (the level passed on `--review`, or `high` when none was), and any `--note <text>` as steering ("focus on …"). The reviewer prefers the marketplace's own `/code-review-quality --effort <effort> --fix true` and falls back to the host's `/code-review <effort> --fix` where that plugin isn't installed — either way it reviews the `bd/<id>` diff and applies its findings to the worktree in place, **leaving them unstaged/uncommitted.**
 3. **Confirm before amend — the human reviews the reviewer's work first.** Surface what the subagent changed: its findings and the **applied diff** (the worktree changes it just made, e.g. `git -C .worktree/<id> diff`), and point again at the worktree path so they can open it in their own tool. Then ask plainly: **amend these into `bd/<id>`?** Do not amend until the human says so. If they decline → don't amend; let them edit the worktree themselves, discard, or ask for another pass. Nothing is baked into the branch without this go-ahead. **Exception — `--unattended`:** still surface the findings and applied diff (there's no human present to act on them, but the record stays honest), then proceed straight to step 4 without asking — this is the one confirm this flag exists to skip. Use it only for an orchestrated run landing on a provisional branch (an epic integration branch, not `master`/`main`) where a human reviews the whole epic later at its final PR (`/orchestrate`); never pass it when a human is directly approving a story to trunk.
 4. On the go-ahead, back in `/validate` (any model — this step is mechanical), **amend** the branch commit on `bd/<id>` with the applied fixes. The story stays on its branch and in `needs-review`; nothing changes status and the worktree is kept.
-5. Point at the amended branch and go to **step 3** for the verdict. Loop until they approve (4a) — each pass is another rung-pinned `/code-review`, a confirm-before-amend, and the amend.
-- **Host note:** `/code-review` is the review-and-apply mechanism on Claude Code. On Codex, run that host's equivalent review-and-apply command in the same rung-pinned subagent against the same worktree, then amend identically — the behavior (a reviewer at the chosen rung, fixes applied in place, amend `bd/<id>`) is what matters, not the command name.
+5. Point at the amended branch and go to **step 3** for the verdict. Loop until they approve (4a) — each pass is another rung-pinned reviewer, a confirm-before-amend, and the amend.
+- **Host note:** the review-and-apply command is whatever the reviewer's own definition names — `/code-review-quality` from this marketplace where it's installed, otherwise the host's own review-and-apply (`/code-review` on Claude Code, its equivalent on Codex and Kimi Code). Never fork this prose per host or per command: the behavior (a reviewer at the chosen rung, fixes applied in place and left uncommitted, then amend `bd/<id>`) is what matters, not the command name.
 
 Either way the reason lives as a durable per-story comment, readable later via `/board <id>`.
 
@@ -154,8 +154,8 @@ Either way the reason lives as a durable per-story comment, readable later via `
 | record note / feedback | `bd comment <id> "<text>"` |
 | approve | `bd close <id>` + `bd label remove <id> needs-review` |
 | clean up | `git worktree remove .worktree/<id>` + `git branch -d bd/<id>` |
-| request impl change | spawn a **frontier** reviewer **anonymously** per the host map in step 4b.1 (native host → `story-reviewer-strong`, or tier-keyed under `--unattended`; custom frontier host → general subagent pinned to the session's own model ID; neither → stop) → `/code-review <effort> --fix` in `.worktree/<id>` (effort from `--review`, default `high`) → show applied diff + **confirm before amend (skipped under `--unattended`)** → amend `bd/<id>` (keep branch + `needs-review`) |
+| request impl change | spawn a **frontier** reviewer **anonymously** per the host map in step 4b.1 (native host → `story-reviewer-strong`, or tier-keyed under `--unattended`; custom frontier host → general subagent pinned to the session's own model ID; neither → stop) → hand it id + `.worktree/<id>` + `<base>` + contract + effort (from `--review`, default `high`) + note; it runs `/code-review-quality … --fix true`, else the host's `/code-review <effort> --fix` → show applied diff + **confirm before amend (skipped under `--unattended`)** → amend `bd/<id>` (keep branch + `needs-review`) |
 | show reviewer's applied diff | `git -C .worktree/<id> diff` (before staging/amend) |
 | contract wrong | `bd label add <id> needs-refinement` + `bd comment` + `bd label remove <id> needs-review` |
 
-Single-writer discipline: `/validate` is the only skill that lands a story on its base branch (the branch it was forked from) and closes it, and it never edits the contract body (`/specify` / `/refine`). It does not hand-write implementation code, but its review pass **delegates** the fix to a rung-pinned `/code-review` subagent, which applies it in place on `bd/<id>` — review-time fixes live on the review tier (and never below medium, regardless of what model `/validate` runs on); greenfield implementation stays `/solve`'s job.
+Single-writer discipline: `/validate` is the only skill that lands a story on its base branch (the branch it was forked from) and closes it, and it never edits the contract body (`/specify` / `/refine`). It does not hand-write implementation code, but its review pass **delegates** the fix to a rung-pinned reviewer subagent, which applies it in place on `bd/<id>` — review-time fixes live on the review tier (and never below medium, regardless of what model `/validate` runs on); greenfield implementation stays `/solve`'s job.

@@ -9,6 +9,77 @@ Versions track the published plugin/marketplace, not the skills' internal frontm
 versions (shown in parentheses where relevant). Entries below `3.0.0` name the project as it
 shipped at the time — `case-solvers` — and are left as written.
 
+## [3.1.0] - 2026-07-30
+
+**New plugin: `code-review-quality` (`1.0.0`) — `/code-review-quality`.** A standalone multi-axis
+review of a change before it merges: correctness, readability, architecture, security, performance,
+judged against *what the change was supposed to do* and reported as `Critical` / `Required` /
+`Consider` / `Nit` / `FYI` findings plus a merge verdict. Inspired by
+[addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)' `code-review-and-quality`;
+written fresh for this repo's voice and flag conventions.
+
+It is deliberately **not** an `sdd` skill. `sdd` is the bd-backed workflow — stories, worktrees,
+`bd/<id>` branches — and this reviewer shares none of that machinery: no bd, no worktrees, no branch
+naming, no `.beads/` guard. `sdd`'s own review path is unchanged (`/validate` → the host's
+`/code-review --fix` in a rung-pinned subagent); this plugin is for reviewing a change that was never
+a story.
+
+- **Default target is the working diff**, resolved by a stated ladder: uncommitted changes if any,
+  else the branch against its merge-base with the trunk, else the last commit. An argument overrides
+  it — a commit, branch, or tag (the change since that point), a path (those files as they stand), or
+  `#<n>` / a PR URL (via `gh`). The report header names which rung of the ladder was taken, so the
+  human always knows what was actually reviewed.
+- **`--effort <low|high|max>`, default `high`** — the same effort vocabulary `/validate` passes to
+  `/code-review`, so one word means one thing across the marketplace. `low` reads the diff alone
+  (correctness + security); `high` reads each changed file whole plus its callers; `max` also traces
+  call sites of changed signatures, runs tests/lint where the repo makes that cheap, and reviews
+  dependency and lockfile diffs package by package.
+- **`--fix <true|false>`, default `false`.** Report-only unless asked. Under `--fix true` it applies
+  the `Critical` and `Required` findings and **leaves them uncommitted** — never `git add`, commit,
+  amend, push, or branch; the human gets a `git diff` and a list of what was applied and what was
+  skipped. Three rules keep the fix pass honest: fix the finding and nothing else (no drive-by
+  renames or reformatting), never fix by weakening a check (no deleted or loosened test, no widened
+  type, no swallowed exception, no disabled lint rule), and a finding you can't verify stays unfixed
+  and says so. Orphaned code after a refactor is listed and **asked about**, never silently deleted.
+- **Model-invocable, and the write path can't be reached implicitly.** "Review my changes" should
+  route here, so the skill carries no `allow_implicit_invocation: false` gate. `--fix` is honored
+  **only when the caller typed it** — an implicit invocation is report-only no matter what, and offers
+  the fix pass instead of taking it. That typed-flag rule is the guardrail, not the flag's default.
+- **No model gate, and no tier vocabulary at all.** Runs on any tier like `/solve`, and unlike the
+  `sdd` skills it carries no `Model Tiers` block — nothing in it turns on a rung, so it is
+  deliberately outside `model-tiers-sync.sh` rather than holding a copy of another plugin's tier map.
+- **It refuses to pretend.** Past ~1000 changed lines it says the review can't be honest in one pass
+  and names the split it would make before going any further. Same spirit in the report: empty
+  severity sections are omitted, but the axes that came back clean are named — a review listing no
+  findings and no coverage is indistinguishable from no review. No `LGTM` without evidence.
+
+**`/validate`'s reviewers now prefer it — a preference, never a dependency** (`/validate` `1.17.1` →
+`1.18.0`). Both shipped reviewer agents (`story-reviewer`, `story-reviewer-strong`, all four
+`.md`/`.toml` files) now run `/code-review-quality <base>...bd/<id> --effort <effort> --fix true`
+where that plugin is installed, and fall back to the host's own review-and-apply (`/code-review
+<effort> --fix` on Claude Code, its equivalent elsewhere) where it isn't. `code-review-quality` ships
+as a separate plugin, so a missing install is explicitly *not* an error and never a reason to skip the
+review — `sdd` keeps working standalone.
+
+Two things fall out of that. `/validate` now hands the reviewer the **base branch `<base>`** along
+with the story id, worktree path, contract, effort, and note: the reviewer diffs `<base>...bd/<id>`
+and a story forked from a feature branch must not have its base guessed as `main`. And `/validate`'s
+prose stopped naming a command it no longer chooses — it says "the reviewer subagent" throughout, with
+the command named once in the agent definitions, so the two can't drift. `/solve`'s one mention of the
+review path follows suit.
+
+To match, `code-review-quality` accepts an explicit `<a>...<b>` range (no inference) and honors a
+caller-named checkout: given a worktree path it runs every git command with `-C <path>` and reviews
+*there*, never the current directory instead.
+
+**Version bookkeeping.** `sdd` `3.0.0` → `3.1.0` in its four manifests (the reviewer agents and
+`/validate` changed). The repo-root `kimi.plugin.json` also goes `3.0.0` → `3.1.0`, but for a second
+reason: on Kimi Code that one manifest versions the *whole bundle* — its GitHub install reads the
+repository root only, so all three plugins ship there as one plugin named `sdd`, now carrying eight
+skills. `writing-claude-md` unchanged at `1.1.0`. Both marketplaces gain a third entry; install with
+`/plugin install code-review-quality@sdd` (Claude Code) or `codex plugin add code-review-quality@sdd`
+(Codex). Requires only `git`, plus `gh` if you point it at a PR number.
+
 ## [3.0.0] - 2026-07-30
 
 Marketplace and plugin renamed `case-solvers` → **`sdd`**, `2.25.1` → `3.0.0` across all five
