@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # authoring-format.sh — verify /specify AUTHORS to the contract format on a
 # frontier model, on Codex. The Codex twin of tests/claude/authoring-format.sh —

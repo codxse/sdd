@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # authoring-format.sh — verify /specify AUTHORS to the contract format on a
 # frontier model. The companion to model-guard.sh: that one asserts a budget model
