@@ -28,8 +28,11 @@ prompt" — it's "shrink the ambiguity." A story *is* that shrinking.
 
 But writing a good story is its own hard problem. Often **I don't actually know what I want** until
 something forces me to say it precisely. That's the job of a **frontier model**: not to write code,
-but to *grill me* — to understand me and turn a fuzzy intent into a clear contract. Authoring a story
-is a feedback loop, human-steered. I stay in it because only I know what I actually want.
+but to run a **Socratic loop** on me — one question at a time, each carrying its own recommended
+answer, pushing on every vague word ("fast", "handles errors") until nothing in the contract is left
+to interpret. It looks up whatever the codebase already answers instead of asking me, and it stops
+when the only unknowns left are ones the solver can settle without changing *what* gets built.
+Authoring is a feedback loop, human-steered. I stay in it because only I know what I actually want.
 
 A story says **WHAT and WHY — never HOW**. It states the outcome and why it matters; it bounds the
 search space (what to look at, what's out of scope). It does **not** dictate the mechanism — which

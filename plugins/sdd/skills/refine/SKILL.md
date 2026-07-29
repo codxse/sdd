@@ -1,7 +1,7 @@
 ---
 name: refine
 description: 'Revise an existing bd story contract by id — typically one labelled needs-refinement after a /solve spec-gap or /validate change-request. Frontier model only; WHAT-only, never code, and returns the story to ready for /solve. Use when the user asks to refine/revise/update a story.'
-version: 1.12.0
+version: 1.13.0
 argument-hint: '<story-id>'
 user-invocable: true
 ---
@@ -103,9 +103,9 @@ still emit the model-guard line and the stop message above, and write nothing.
 ## 2. The bars
 
 A revision is held to the same bars as a fresh story: **Contract Rubrics** at the end of this skill.
-Authoring principles, AC Quality Rubric, Atomicity Gate, Complexity Tier, Pre-write Guard, and
-Output Format all apply to the revision exactly as they do to a fresh story. They are part of this
-skill and already in context: there is no rubric file to locate, open, or read.
+Authoring principles, Socratic loop, AC Quality Rubric, Atomicity Gate, Complexity Tier, Pre-write
+Guard, and Output Format all apply to the revision exactly as they do to a fresh story. They are
+part of this skill and already in context: there is no rubric file to locate, open, or read.
 
 ## 3. Vet the reason before trusting it
 
@@ -173,6 +173,27 @@ you created. `/board <id>` to view it.
 - **Grounded names.** Every artifact a story names (file/class/method/endpoint/table/config key)
   must be verified to exist via Read/Grep before writing — a budget solver trusts names. Can't
   verify → describe its role instead.
+
+---
+
+## Socratic loop
+
+Don't take the author's description at face value and write it up. It is the *opening* position; the
+contract is what survives questioning. Ask until a solver reading the result has nothing left to
+decide — that is the Atomicity Gate's **Settled** bar, and this is how you reach it.
+
+- **Read before you ask.** The codebase answers it → explore, don't ask (budget ~3 Read + 2 Grep when
+  the author names an artifact). Asking what you could have looked up spends their attention on your
+  work.
+- **Ask only what changes the contract.** Different answers must produce different boundaries, AC, or
+  scope calls. Anything else is noise.
+- **One question at a time, each carrying your recommended answer** and the reason for it. A bare
+  question makes the author do the thinking twice.
+- **Push on the vague word.** "Fast", "secure", "handles errors", "properly" — each is an unwritten
+  AC. Ask for the observable: how fast, against what, which errors, checked how.
+- **Follow the answer.** An answer that opens a new gap is the next question, not a stopping point.
+
+Stop when every remaining unknown is one the solver can settle without changing *what* gets built.
 
 ---
 

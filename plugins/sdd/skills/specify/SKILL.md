@@ -1,7 +1,7 @@
 ---
 name: specify
 description: 'Author one bd story, or decompose a large goal into an epic. Frontier model only. Authoring only — /board views, /refine revises. Use when the user asks to specify or spec out a problem or goal, open a case, or write a new story or epic.'
-version: 2.13.0
+version: 2.14.0
 argument-hint: '<description>'
 user-invocable: true
 ---
@@ -110,16 +110,14 @@ Invoked as `/specify <description>` — the whole argument is the description to
 ## Authoring: Story vs Epic
 
 After the guards pass, hold every contract to **Contract Rubrics** at the end of this skill —
-Authoring principles, Atomicity Gate, Complexity Tier, Verification Mode, AC Quality Rubric,
-Pre-write Guard, and Output Format. They are part of this skill and already in context: there is no
-rubric file to locate, open, or read. Never author from memory of these bars when the text is right
-there.
+Authoring principles, Socratic loop, Atomicity Gate, Complexity Tier, Verification Mode, AC Quality
+Rubric, Pre-write Guard, and Output Format. They are part of this skill and already in context:
+there is no rubric file to locate, open, or read. Never author from memory of these bars when the
+text is right there.
 
-Then draft inference-first: explore the codebase rather than ask when the answer is there (budget ~3
-Read + 2 Grep when the user names an artifact); settle scope-affecting unknowns one at a time, each
-with a recommended answer; verify every name the draft keeps (mandatory, unbudgeted). Run the
-Pre-write Guard and AC Quality Rubric on every story before it enters bd. Then judge size against
-the **Atomicity Gate**:
+Then work the **Socratic loop** until nothing in the contract is left to interpret, verifying every
+name the draft keeps (mandatory, unbudgeted). Run the Pre-write Guard and AC Quality Rubric on every
+story before it enters bd. Then judge size against the **Atomicity Gate**:
 
 - **Fits one budget pass → Story mode** — draft the full Output Format, then the **Staging Loop** to
   write, iterate, commit.
@@ -218,6 +216,27 @@ Single-writer discipline: `/specify` authors **new** contracts (story bodies) an
 - **Grounded names.** Every artifact a story names (file/class/method/endpoint/table/config key)
   must be verified to exist via Read/Grep before writing — a budget solver trusts names. Can't
   verify → describe its role instead.
+
+---
+
+## Socratic loop
+
+Don't take the author's description at face value and write it up. It is the *opening* position; the
+contract is what survives questioning. Ask until a solver reading the result has nothing left to
+decide — that is the Atomicity Gate's **Settled** bar, and this is how you reach it.
+
+- **Read before you ask.** The codebase answers it → explore, don't ask (budget ~3 Read + 2 Grep when
+  the author names an artifact). Asking what you could have looked up spends their attention on your
+  work.
+- **Ask only what changes the contract.** Different answers must produce different boundaries, AC, or
+  scope calls. Anything else is noise.
+- **One question at a time, each carrying your recommended answer** and the reason for it. A bare
+  question makes the author do the thinking twice.
+- **Push on the vague word.** "Fast", "secure", "handles errors", "properly" — each is an unwritten
+  AC. Ask for the observable: how fast, against what, which errors, checked how.
+- **Follow the answer.** An answer that opens a new gap is the next question, not a stopping point.
+
+Stop when every remaining unknown is one the solver can settle without changing *what* gets built.
 
 ---
 

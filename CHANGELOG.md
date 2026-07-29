@@ -11,6 +11,21 @@ shipped at the time — `case-solvers` — and are left as written.
 
 ## [Unreleased]
 
+**Added the Socratic loop — the authoring behavior the README already claimed.** The README said a
+frontier model's job was to *grill me* into a clear contract. Two problems: "grill me" says nothing
+actionable, and the skill never did it. `/specify`'s entire questioning discipline was half a line —
+"settle scope-affecting unknowns one at a time, each with a recommended answer" — so the README
+described behavior that wasn't implemented anywhere.
+
+It is now a real section in the shared rubrics, inlined into `/specify` and `/refine`: read the
+codebase before asking (asking what you could look up spends the author's attention), ask only what
+changes the contract, one question at a time each carrying its recommended answer and reason, push
+on the vague word ("fast", "secure", "handles errors" — each an unwritten AC; ask for the
+observable), and follow an answer that opens a new gap. Its termination condition is not a question
+count but the Atomicity Gate's existing **Settled** bar: stop when every remaining unknown is one the
+solver can settle without changing *what* gets built. The README paragraph now describes that loop
+instead of a metaphor. Skill versions: `/specify` `2.14.0`, `/refine` `1.13.0`.
+
 **`/validate` reviews first, asks second — and no longer assumes VSCode.** Bare `/validate <id>` used
 to open the story's worktree in VSCode and ask "approve, or request changes?" before the human had
 necessarily read anything. Two problems: it hardcoded one editor (and `code .worktree/<id>` opens a

@@ -32,6 +32,27 @@ relative path in skill prose resolves against the *user's* working directory, no
 
 ---
 
+## Socratic loop
+
+Don't take the author's description at face value and write it up. It is the *opening* position; the
+contract is what survives questioning. Ask until a solver reading the result has nothing left to
+decide — that is the Atomicity Gate's **Settled** bar, and this is how you reach it.
+
+- **Read before you ask.** The codebase answers it → explore, don't ask (budget ~3 Read + 2 Grep when
+  the author names an artifact). Asking what you could have looked up spends their attention on your
+  work.
+- **Ask only what changes the contract.** Different answers must produce different boundaries, AC, or
+  scope calls. Anything else is noise.
+- **One question at a time, each carrying your recommended answer** and the reason for it. A bare
+  question makes the author do the thinking twice.
+- **Push on the vague word.** "Fast", "secure", "handles errors", "properly" — each is an unwritten
+  AC. Ask for the observable: how fast, against what, which errors, checked how.
+- **Follow the answer.** An answer that opens a new gap is the next question, not a stopping point.
+
+Stop when every remaining unknown is one the solver can settle without changing *what* gets built.
+
+---
+
 ## Atomicity Gate
 
 A vague story does not fail fast; it gets **interpreted** — and every model interprets differently.
