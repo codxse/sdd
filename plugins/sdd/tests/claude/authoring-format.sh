@@ -1,8 +1,7 @@
-#!/usr/bin/env bash
 #
-# authoring-format.sh — verify /specify AUTHORS to the contract format on a planning
-# model. The companion to model-guard.sh: that one asserts a budget model STOPS;
-# this one asserts a frontier model FOLLOWS — it drafts a `.spec.md` that obeys the
+# authoring-format.sh — verify /specify AUTHORS to the contract format on a
+# frontier model. The companion to model-guard.sh: that one asserts a budget model
+# STOPS; this one asserts a frontier model FOLLOWS — it drafts a `.spec.md` that obeys the
 # Output Format and branches Story vs Epic by size (the "Authoring: Story vs Epic"
 # section of skills/specify/SKILL.md).
 #
@@ -64,12 +63,12 @@ done
 
 # One capability, small surface → must come out as a single Story.
 STORY_DESCRIPTIONS=(
-  "add a slugify utility to the Python project that turns a title string into a url-safe slug: lowercase, trim, and collapse any run of non-alphanumeric characters into a single hyphen"
-  "add a retry helper to the Python project that re-runs a callable up to N times with a fixed delay between attempts, re-raising the last error if all attempts fail"
+  "add a slugify utility to the Python project that turns a title string into a url-safe slug: lowercase, trim, and collapse any run of non-alphanumeric characters into a single hyphen; characters outside a-z and 0-9 after lowercasing count as separators, never transliterated"
+  "add a retry helper to the Python project that re-runs a callable up to N times with a fixed delay between attempts, re-raising the last error if all attempts fail; any exception triggers a retry"
 )
 # Multiple independent capabilities across subsystems → must decompose to an Epic.
 EPIC_DESCRIPTIONS=(
-  "build user accounts for the Python web app: email+password signup, login with sessions, password reset over email, and an admin page listing all users"
+  "build user accounts for the Python Flask web app with SQLite storage: email+password signup, login with server-side sessions, password reset via a reset link printed to the server log (no email service in this dev setup), and an admin page listing all users; the first admin is created by a CLI command, never through public signup"
 )
 
 # A minimal fixture so the project's language and layout are discoverable from the
@@ -137,7 +136,9 @@ run_trial() {
         grep -qF "$sec" <<<"$body" || problems+=("missing section: $sec")
       done
       grep -qE '```gherkin' <<<"$body" || problems+=("AC not in a \`\`\`gherkin fence")
-      grep -qiE '^As an? .+, I want .+,? so that .+' <<<"$body" || problems+=("Problem Statement missing the 'As a …, I want …, so that …' story line")
+      # The template's own form is a three-line fenced story line, so join before
+      # matching: accept both the one-line and the three-line spellings.
+      tr '\n' ' ' <<<"$body" | grep -qiE 'As an? [^,]+, +I want [^,]+,? +so that ' || problems+=("Problem Statement missing the 'As a …, I want …, so that …' story line")
       grep -qE '^Feature: ' <<<"$body" || problems+=("gherkin block missing its 'Feature:' title line")
       grep -qE "$SOLVER_RE" <<<"$body" || problems+=("Complexity call missing or malformed — want 'Recommended Solver: <budget|medium|frontier> · effort <low|high|max>'")
       [ "$ac_count" -eq 1 ] || problems+=("expected 1 story (1 AC block), found $ac_count — over/under-decomposed")
