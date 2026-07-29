@@ -150,7 +150,7 @@ publish the same two plugins under `plugins/`:
   - **Reviewer pinning lives natively in `skills/validate/SKILL.md`** (moved there in 2.24.1 —
     `/validate` is its sole consumer — so it is *not* part of the synced block) and keys off host
     *capability*, not a host list. A native Claude/Codex host
-    uses the shipped reviewer agents (medium + frontier rungs, cost-keyed, with the same-class
+    uses the shipped reviewer agents (medium + frontier rungs, cost-keyed, with the same-rung
     step-up); a native Kimi Code
     host can't receive shipped agents from a plugin, but loads the same `.md` files when the user
     copies them into `~/.agents/agents/` — the `model:` pin is ignored there, so like a custom

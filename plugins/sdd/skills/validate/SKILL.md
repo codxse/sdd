@@ -1,7 +1,7 @@
 ---
 name: validate
 description: 'Human review gate for a needs-review story by id: runs a review pass at effort high via a rung-pinned /code-review subagent that applies fixes in place on bd/<id>, then enacts your verdict — approve (land it on the branch it was forked from, close, unblock dependents), another pass, or a wrong contract routed to /refine. --approve lands with no review pass; --review [effort] picks a different effort; --note <text> steers the review or annotates the story. --unattended is for /orchestrate driving a run onto a provisional epic branch — never for a human approving straight to master/main.'
-version: 1.17.0
+version: 1.17.1
 argument-hint: '[<story-id>] [--approve [--unattended]] [--review [effort] [--unattended]] [--note <text>]'
 disable-model-invocation: false
 user-invocable: true
@@ -49,22 +49,18 @@ later solve. `/solve` reports its rung and continues on any. `/board` and `/vali
 
 `/validate`'s review pass must run on a reviewer at **medium or better**, regardless of what model
 `/validate` itself runs on (it carries no model gate). How the reviewer is pinned keys off what the
-host can do — not an enumerated host list. Take the first branch that
-applies:
+host can do — not an enumerated host list. Take the first branch that applies:
 
-1. **Native host that lists the shipped reviewer agents** (session model carries a Claude or GPT-5
-   marker, and the host lists `story-reviewer`/`story-reviewer-strong`) → use the agents; the pin lives
-   in the definition and is enforced by the harness. Two-tier cost-keying and the same-class step-up
-   apply — the roster offers a medium rung (`story-reviewer`) and a frontier rung
-   (`story-reviewer-strong`).
-2. **Else the session model classifies as `frontier` or `medium`** (a custom frontier host, e.g.
-   `qwen3.8-max-preview`; or native Kimi Code on K3-class) → one rung: the **session's own
-   model ID**. Spawn a general subagent pinned to it — the host accepts literal IDs — except on Kimi
-   Code when the user has copied the reviewer `.md` files into `~/.agents/agents/` (per the README)
-   and the host lists `story-reviewer`: spawn that agent instead (same reviewer prompt, narrowed
-   tools) — its `model:` field is ignored by this host, so it still runs on the session model.
-   Cost-keying and the same-class step-up both point at the one rung; the rule degrades to a single
-   pin, it never errors.
+1. **Native host that lists the shipped reviewer agents** (the host lists
+   `story-reviewer`/`story-reviewer-strong`) → use the agents; the pin lives in the definition and is
+   enforced by the harness, not by this prose. Two rungs are available: **medium** is
+   `story-reviewer`, **frontier** is `story-reviewer-strong`. Step 4b.1 picks between them.
+2. **Else the session model classifies as `frontier` or `medium`** → one rung only: the **session's
+   own model ID**. Spawn a general subagent pinned to it — the host accepts literal IDs — except on
+   Kimi Code when the user has copied the reviewer `.md` files into `~/.agents/agents/` (per the
+   README) and the host lists `story-reviewer`: spawn that agent instead (same reviewer prompt,
+   narrowed tools) — its `model:` field is ignored by this host, so it still runs on the session
+   model.
 3. **Else** (budget / `unsure`, no usable native agents) → **stop** and tell the user no reviewer at
    medium or better can be pinned.
 
@@ -132,20 +128,16 @@ The human decides with the reviewer's findings and applied diff already in front
 If `--note <text>` was supplied, record it as a `bd comment` now (before anything else).
 
 The story never bounces back to `/solve`; the branch is fixed in place by delegating the review to a **medium-or-better model**:
-1. **Spawn the review-and-apply as a subagent and pin its rung explicitly — never inherit the ambient model.** `/validate` carries no model gate, so if you don't set the model the subagent inherits whatever `/validate` is running on — often a budget model like `haiku` — which is exactly the failure this step exists to prevent. Pinning is **mandatory**, not best-effort. Pick the pin from the **Reviewer pinning by host** section above — take the first branch that applies:
-   - **Native host that lists the shipped reviewer agents** (session model carries a Claude or GPT-5 marker, and the host lists `story-reviewer`/`story-reviewer-strong`) → use the agents; the model pin then lives in the definition and is enforced by the harness, not by this prose. The plugin ships them as agent definitions for both hosts (`agents/<name>.md` on Claude Code, auto-discovered and listed host-namespaced, e.g. `sdd:story-reviewer`; `agents/<name>.toml` on Codex, copied into `.codex/agents/` per the README). Default to **`story-reviewer-strong`**.
-   - **Custom frontier host** (session model is neither native marker but classifies as **`frontier` or `medium`**, e.g. `qwen3.8-max-preview`) → spawn a general subagent pinned to the **session's own model ID** — the host accepts literal IDs, so `Agent(subagent_type: "general-purpose", model: "<session model ID>", prompt: …)`. One rung.
-   - **Neither** → **stop** and tell the user no reviewer at medium or better can be pinned — do not fall back to a budget reviewer.
-   Either way, spawn **anonymously — never pass a `name`**: named teammates can't be spawned from inside another agent, and nothing needs to address this reviewer after it reports. **Never** pin or inherit a budget ID, and never run the review inline on `/validate`'s own model instead of spawning.
-   **Under `--unattended`, the pin is tier-keyed instead of a flat default** — an orchestrated epic pays for many reviews, so each one costs what its own story's Complexity call says it warrants. This applies on the native-host branch, where the roster offers a medium and a frontier rung:
-   - `solver-budget` or `solver-medium` (from the story's labels, already in step 1's `bd show`) → spawn **`story-reviewer`**, the medium pin (Claude: `sonnet`; Codex: `gpt-5.6-terra`). One exception: if the recorded assignee (the claim in `bd show`) is **the same model class as this chosen reviewer** — the story was solved by `sonnet` and the reviewer would also be `sonnet` — step up to **`story-reviewer-strong`** instead, so a model never reviews its own class's work. A budget-roster assignee (`haiku`, `flash`, `mini`, …) never triggers this step-up: a medium reviewer checking a budget solver's work is exactly the intended cheap path, not a conflict.
-   - `solver-frontier`, or no `solver-*` label → **`story-reviewer-strong`**, the frontier pin (Claude: `opus`; Codex: `gpt-5.6-sol`).
-   On the custom-host branch there is one rung — cost-keying and the same-class step-up both point at the session's own model ID; the rule degrades to a single pin, it never errors. The floor never moves: every choice stays at medium or better, so the never-a-budget-ID rule binds unattended runs identically.
+1. **Spawn the review-and-apply as a subagent with its rung pinned — never inherit the ambient model.** `/validate` carries no model gate, so an unpinned subagent inherits whatever `/validate` happens to be running on, which may be budget — exactly the failure this step exists to prevent. Pinning is **mandatory**, not best-effort. **Reviewer pinning by host** above decides *how* to pin and names the reviewer for each rung; this step decides only *which rung*:
+   - **A human is present** (no `--unattended`) → the **frontier** rung.
+   - **Under `--unattended`** → the rung the story's own Complexity call asks for, read from its `solver-*` label (already in step 1's `bd show`): `solver-budget` or `solver-medium` → the **medium** rung; `solver-frontier`, or no `solver-*` label → the **frontier** rung. An orchestrated epic pays for many reviews, so each one costs what its own story warrants rather than a flat top rate. **Same-rung step-up:** if the recorded assignee (the claim in `bd show`) classifies at the same rung as the reviewer this would pick, go up one rung instead — a model never reviews its own class's work. A budget assignee therefore never triggers it; a medium reviewer over a budget solver's diff is the intended cheap path, not a conflict.
+
+   Where the host offers only one rung, every choice above collapses onto it — the rule degrades to a single pin, it never errors. The floor never moves: **medium or better, always.**
 2. Inside that subagent, run `/code-review <effort> --fix` scoped to the story's worktree (`.worktree/<id>`), handing it the contract as context — the **WHAT** + Acceptance Criteria from `bd show <id>` — as what the diff must satisfy, plus any `--note <text>` as steering ("focus on …"). `<effort>` is the level passed on `--review`, or `high` when none was. It reviews the `bd/<id>` diff and applies its findings to the worktree in place — **leaving them unstaged/uncommitted.**
 3. **Confirm before amend — the human reviews the reviewer's work first.** Surface what the subagent changed: its findings and the **applied diff** (the worktree changes it just made, e.g. `git -C .worktree/<id> diff`), and point again at the worktree path so they can open it in their own tool. Then ask plainly: **amend these into `bd/<id>`?** Do not amend until the human says so. If they decline → don't amend; let them edit the worktree themselves, discard, or ask for another pass. Nothing is baked into the branch without this go-ahead. **Exception — `--unattended`:** still surface the findings and applied diff (there's no human present to act on them, but the record stays honest), then proceed straight to step 4 without asking — this is the one confirm this flag exists to skip. Use it only for an orchestrated run landing on a provisional branch (an epic integration branch, not `master`/`main`) where a human reviews the whole epic later at its final PR (`/orchestrate`); never pass it when a human is directly approving a story to trunk.
 4. On the go-ahead, back in `/validate` (any model — this step is mechanical), **amend** the branch commit on `bd/<id>` with the applied fixes. The story stays on its branch and in `needs-review`; nothing changes status and the worktree is kept.
 5. Point at the amended branch and go to **step 3** for the verdict. Loop until they approve (4a) — each pass is another rung-pinned `/code-review`, a confirm-before-amend, and the amend.
-- **Host note:** `/code-review` is the review-and-apply mechanism on Claude Code. On Codex, run that host's equivalent review-and-apply command in the same pinned-frontier subagent against the same worktree, then amend identically — the behavior (frontier reviewer, apply fixes in place, amend `bd/<id>`) is what matters, not the command name.
+- **Host note:** `/code-review` is the review-and-apply mechanism on Claude Code. On Codex, run that host's equivalent review-and-apply command in the same rung-pinned subagent against the same worktree, then amend identically — the behavior (a reviewer at the chosen rung, fixes applied in place, amend `bd/<id>`) is what matters, not the command name.
 
 Either way the reason lives as a durable per-story comment, readable later via `/board <id>`.
 

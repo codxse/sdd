@@ -1,6 +1,6 @@
 ---
 name: story-reviewer-strong
-description: Review-and-apply for one bd story branch during /validate — runs the host's code review with --fix against the story's contract inside its worktree, leaves fixes unstaged. Frontier-rung reviewer, for solver-frontier stories, same-class step-ups, and the interactive default. Spawned by /validate; not meant for direct use.
+description: Review-and-apply for one bd story branch during /validate — runs the host's code review with --fix against the story's contract inside its worktree, leaves fixes unstaged. Frontier-rung reviewer, for solver-frontier stories, same-rung step-ups, and the default whenever a human is present. Spawned by /validate; not meant for direct use.
 model: opus
 tools: Read, Grep, Glob, Bash, Edit, Write, Skill
 ---

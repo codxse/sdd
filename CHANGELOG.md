@@ -28,7 +28,18 @@ Nowhere does the workflow name an editor now: `/validate` prints the worktree pa
 the `git diff <base>...bd/<id>` command, and the human opens it in whatever they use. Calibration
 (step 4a.7) re-keys from "interactive flow only" — a flow that no longer exists — to "a human is
 present and a review pass ran", so it skips under `--approve` and `--unattended`. Skill versions:
-`/validate` `1.17.0`, `/solve` `1.10.1` (handoff line).
+`/validate` `1.17.1`, `/solve` `1.10.1` (handoff line).
+
+Step 4b.1 also stopped naming models. It had grown into a second copy of **Reviewer pinning by
+host** — same host branches, same spawn rules — with seven concrete model IDs hardcoded into it
+(`sonnet`/`gpt-5.6-terra` as "the medium pin", `opus`/`gpt-5.6-sol` as "the frontier pin", `haiku`
+and friends as examples). That is what the rung ladder exists to avoid: two places to update when
+the roster moves, and a step that reads as a model list rather than a policy. 4b.1 now decides only
+**which rung** — frontier when a human is present, the story's own `solver-*` rung under
+`--unattended`, one up on a same-rung assignee — and the pinning section decides *how*, since it
+already maps each rung to its reviewer agent. The "same-class step-up" is renamed **same-rung
+step-up** in both reviewer agent descriptions and `CLAUDE.md` to match. `/validate` is 2,034 chars
+lighter with no rule removed.
 
 **Removed the Problem Types taxonomy.** Stories were classified as Feature / Bugfix / Refactor /
 Design / Investigation, and five places downstream branched on that classification — but the type
