@@ -12,7 +12,13 @@
 #   * the guard did NOT falsely refuse a frontier model, AND
 #   * the output asks at least one question, AND
 #   * the questioning carries a recommended answer, AND
-#   * nothing was authored — no `.spec.md` draft, no bd backlog.
+#   * nothing was drafted — no `.spec.md`. (`bd init` creating `.beads/` is the
+#     documented Environment Guard flow on a frontier model, not authoring.)
+#
+# No false-refusal grep on this host: a `codex exec` transcript echoes the SKILL.md
+# the model read, so matching "must run on a frontier model" hits the skill's own
+# prose (the same trap model-guard.sh documents). A real false refusal still fails
+# here — it neither asks nor drafts — with the stop message visible under -v.
 #
 # The recommendation check is a coarse regex over common phrasings — a trial can
 # ask well and still trip it on unusual wording. Re-run with -v before believing
@@ -96,12 +102,12 @@ run_trial() {
 
   local -a problems=()
 
-  grep -qiE 'must run on a frontier model' <<<"$out" && problems+=("falsely refused a frontier model")
-
-  # The load-bearing assertion: authored nothing. A written draft means the
-  # architect invented the observable the vague word was hiding.
+  # The load-bearing assertion: drafted nothing. `.spec.md` is the Staging Loop's
+  # artifact — a written draft means the architect invented the observable the vague
+  # word was hiding. `.beads/` is NOT a failure signal here (unlike model-guard):
+  # a frontier model passes the Model Guard into the Environment Guard, whose
+  # documented flow is `bd init` on first use — expected, and authors nothing.
   [ -f "$dir/.spec.md" ] && problems+=("wrote .spec.md past the vague word")
-  [ -d "$dir/.beads" ]   && problems+=("created a bd backlog past the vague word")
 
   grep -q '?' <<<"$out" || problems+=("asked no question — took the description at face value")
   grep -qiE "$RECOMMEND_RE" <<<"$out" || problems+=("questioning carries no recommended answer (coarse check — eyeball with -v)")

@@ -23,10 +23,12 @@
 # taxonomy (a `Deliverable Format` section) or the retired `planning` tier
 # vocabulary survives.
 #
-# Descriptions are deliberately GREENFIELD and self-contained: a fresh `git init`
-# has no codebase, so a story that names an existing artifact would (correctly) make
-# the architect stop and ask for grounding rather than author. We test the authoring
-# format, so we feed it work it can draft from inference alone.
+# Descriptions are GREENFIELD but name the project's language, and each trial seeds a
+# minimal Python fixture first: the 3.0.0 Socratic loop asks about any
+# contract-changing unknown — and in a bare `git init` the runtime *is* one (a
+# correct 3.0.0 run asks "which language?" instead of drafting). The fixture plus an
+# explicit language leaves nothing the loop must ask, so the draft is still the
+# artifact we grade.
 #
 # Permission mode is `bypassPermissions` (not acceptEdits): the architect must Read
 # the shared rubrics — which live outside the temp repo — and may `bd init`. Under
@@ -60,15 +62,23 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# One capability, small surface, greenfield → must come out as a single Story.
+# One capability, small surface → must come out as a single Story.
 STORY_DESCRIPTIONS=(
-  "add a slugify utility that turns a title string into a url-safe slug: lowercase, trim, and collapse any run of non-alphanumeric characters into a single hyphen"
-  "add a retry helper that re-runs a callable up to N times with a fixed delay between attempts, re-raising the last error if all attempts fail"
+  "add a slugify utility to the Python project that turns a title string into a url-safe slug: lowercase, trim, and collapse any run of non-alphanumeric characters into a single hyphen"
+  "add a retry helper to the Python project that re-runs a callable up to N times with a fixed delay between attempts, re-raising the last error if all attempts fail"
 )
 # Multiple independent capabilities across subsystems → must decompose to an Epic.
 EPIC_DESCRIPTIONS=(
-  "build user accounts: email+password signup, login with sessions, password reset over email, and an admin page listing all users"
+  "build user accounts for the Python web app: email+password signup, login with sessions, password reset over email, and an admin page listing all users"
 )
+
+# A minimal fixture so the project's language and layout are discoverable from the
+# codebase itself — the Socratic loop's "read before you ask" answers the runtime
+# question from this instead of asking it.
+seed_fixture() {  # $1 = repo dir
+  printf '[project]\nname = "fixture-app"\nversion = "0.1.0"\n' > "$1/pyproject.toml"
+  mkdir -p "$1/src"
+}
 
 CORE_SECTIONS=("## Problem Statement" "## Constraints" "## Acceptance Criteria" "## Verification" "## Complexity" "## Out of Scope")
 
@@ -87,6 +97,7 @@ run_trial() {
   local kind="$1" desc="$2" dir out draft
   dir=$(mktemp -d)
   ( cd "$dir" && git init -q )
+  seed_fixture "$dir"
   out=$( cd "$dir" && timeout 300 claude -p "/specify $desc" \
            --model "$MODEL" --permission-mode bypassPermissions 2>&1 )
 

@@ -26,10 +26,12 @@
 # taxonomy (a `Deliverable Format` section) or the retired `planning` tier
 # vocabulary survives.
 #
-# Descriptions are deliberately GREENFIELD and self-contained: a fresh `git init`
-# has no codebase, so a story that names an existing artifact would (correctly)
-# make the architect stop and ask for grounding rather than author. We test the
-# authoring format, so we feed it work it can draft from inference alone.
+# Descriptions are GREENFIELD but name the project's language, and each trial seeds a
+# minimal Python fixture first: the 3.0.0 Socratic loop asks about any
+# contract-changing unknown — and in a bare `git init` the runtime *is* one (a
+# correct 3.0.0 run asks "which language?" instead of drafting). The fixture plus an
+# explicit language leaves nothing the loop must ask, so the draft is still the
+# artifact we grade.
 #
 # Usage:
 #   tests/codex/authoring-format.sh [-n TRIALS] [-m MODEL] [-v] [--no-sync]
@@ -57,15 +59,23 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# One capability, small surface, greenfield → must come out as a single Story.
+# One capability, small surface → must come out as a single Story.
 STORY_DESCRIPTIONS=(
-  "add a slugify utility that turns a title string into a url-safe slug: lowercase, trim, and collapse any run of non-alphanumeric characters into a single hyphen"
-  "add a retry helper that re-runs a callable up to N times with a fixed delay between attempts, re-raising the last error if all attempts fail"
+  "add a slugify utility to the Python project that turns a title string into a url-safe slug: lowercase, trim, and collapse any run of non-alphanumeric characters into a single hyphen"
+  "add a retry helper to the Python project that re-runs a callable up to N times with a fixed delay between attempts, re-raising the last error if all attempts fail"
 )
 # Multiple independent capabilities across subsystems → must decompose to an Epic.
 EPIC_DESCRIPTIONS=(
-  "build user accounts: email+password signup, login with sessions, password reset over email, and an admin page listing all users"
+  "build user accounts for the Python web app: email+password signup, login with sessions, password reset over email, and an admin page listing all users"
 )
+
+# A minimal fixture so the project's language and layout are discoverable from the
+# codebase itself — the Socratic loop's "read before you ask" answers the runtime
+# question from this instead of asking it.
+seed_fixture() {  # $1 = repo dir
+  printf '[project]\nname = "fixture-app"\nversion = "0.1.0"\n' > "$1/pyproject.toml"
+  mkdir -p "$1/src"
+}
 
 CORE_SECTIONS=("## Problem Statement" "## Constraints" "## Acceptance Criteria" "## Verification" "## Complexity" "## Out of Scope")
 
@@ -84,6 +94,7 @@ run_trial() {
   local kind="$1" desc="$2" dir out rc draft
   dir=$(mktemp -d)
   ( cd "$dir" && git init -q )
+  seed_fixture "$dir"
   out=$( cd "$dir" && run_clean_env timeout 300 codex exec \
            --ephemeral \
            --sandbox workspace-write \
@@ -110,9 +121,11 @@ run_trial() {
 
   local -a problems=()
 
-  # The guard must NOT refuse a frontier model. (The budget-STOP direction is
-  # covered by model-guard.sh.)
-  grep -qiE 'must run on a frontier model' <<<"$out" && problems+=("falsely refused a frontier model")
+  # No false-refusal grep on this host: a `codex exec` transcript echoes the SKILL.md
+  # the model read, so matching "must run on a frontier model" hits the skill's own
+  # prose (the same trap model-guard.sh documents). A real false refusal still fails
+  # here as "no .spec.md draft written", with the stop message visible under -v. The
+  # below-frontier direction is covered by model-guard.sh.
 
   draft="$dir/.spec.md"
   if [ ! -f "$draft" ]; then
