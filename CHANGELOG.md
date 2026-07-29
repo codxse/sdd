@@ -9,7 +9,14 @@ Versions track the published plugin/marketplace, not the skills' internal frontm
 versions (shown in parentheses where relevant). Entries below `3.0.0` name the project as it
 shipped at the time — `case-solvers` — and are left as written.
 
-## [Unreleased]
+## [3.0.0] - 2026-07-30
+
+Marketplace and plugin renamed `case-solvers` → **`sdd`**, `2.25.1` → `3.0.0` across all five
+manifests. Commands renamed `/case` → `/specify` and `/evaluate` → `/validate`. Skills:
+`/specify` (`2.11.0` → `2.14.0`), `/refine` (`1.10.0` → `1.13.0`), `/validate` (`1.15.0` →
+`1.17.1`), `/solve` (`1.8.0` → `1.10.1`), `/orchestrate` (`1.6.0` → `1.7.2`), `/board` (`1.1.0` →
+`1.1.2`). `writing-claude-md` unchanged at `1.1.0`. See *Migrating from case-solvers* in the README —
+installed plugins must be reinstalled under `codxse/sdd`.
 
 **Added the Socratic loop — the authoring behavior the README already claimed.** The README said a
 frontier model's job was to *grill me* into a clear contract. Two problems: "grill me" says nothing
@@ -1207,7 +1214,7 @@ publishable Claude Code plugin marketplace.
   `claude plugin validate --strict`. The original values contained `: ` (colon-space)
   sequences that broke plain-scalar parsing and silently dropped the metadata.
 
-[Unreleased]: https://github.com/codxse/case-solvers/compare/v1.0.0...HEAD
+[3.0.0]: https://github.com/codxse/sdd/compare/v1.0.0...v3.0.0
 [1.0.0]: https://github.com/codxse/case-solvers/compare/v0.4.0...v1.0.0
 [0.4.0]: https://github.com/codxse/case-solvers/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/codxse/case-solvers/compare/v0.2.0...v0.3.0
