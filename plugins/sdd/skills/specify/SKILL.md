@@ -289,11 +289,17 @@ rung only (no model IDs; the roster changes, the judgment shouldn't).
 | `medium` | Between the two. |
 | `frontier` | High blast radius if subtly wrong (security, auth, money, data loss), or an approach that itself takes judgment (novel algorithm, non-obvious concurrency/ordering, constraints that look like they conflict). |
 
-**Difficulty signals** (presence pushes up a tier; none present → budget): security/auth/crypto
-surface; concurrency, ordering, or race-condition correctness; non-obvious algorithmic or
-mathematical reasoning; subtle external library/API semantics (easy to call in a way that looks
-correct but isn't); a refactor across an unfamiliar or inconsistent existing pattern, where
-preserving behavior takes judgment, not mechanical translation.
+**Difficulty signals.** Count how many the story carries, then map: **none → `budget`**; **one,
+contained to a single well-understood area → `medium`**; **high blast radius, or several signals
+interacting → `frontier`**.
+
+- **Security surface** — auth, crypto, permissions, secrets, money.
+- **Concurrency** — ordering, races, retries, idempotency.
+- **Non-obvious reasoning** — algorithmic or mathematical, where the naive version is quietly wrong.
+- **Subtle external semantics** — a library or API easy to call in a way that looks correct but
+  isn't.
+- **Judgment-bearing refactor** — an unfamiliar or inconsistent existing pattern, where preserving
+  behavior takes reading it, not mechanically translating it.
 
 **Escalate along the axis the signal actually stresses** — don't default to raising tier for
 everything:
