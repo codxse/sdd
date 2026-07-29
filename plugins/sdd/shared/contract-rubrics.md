@@ -90,16 +90,12 @@ already fits a budget solver's working set. Complexity is a separate axis, judge
 gate passes: an atomic story can still call for more reasoning capability than raw execution. Judge
 it in addition to the Atomicity Gate, never instead of it.
 
-Recommend the **cheapest tier + effort combination likely to succeed.**
-
-**Tiers** (ordinal — no model-ID pinning; the roster changes, the judgment shouldn't):
-- **budget** — mechanical: follows an existing pattern, low blast radius if subtly wrong.
-- **medium** — the middle rung of the roster (e.g. Sonnet over Opus) — whichever middle option the
-  setup actually offers. One real difficulty signal below, contained to a single well-understood
-  area.
-- **frontier** — high blast radius if subtly wrong (security, auth, money, data loss), or the correct
-  approach itself takes judgment (novel algorithm, non-obvious concurrency/ordering, reconciling
-  constraints that look like they conflict).
+Recommend the **cheapest rung + effort likely to succeed**, on the same ladder as **Tier
+classification** — but judge what the *story* demands, not what you are running on, and name the
+rung only (no model IDs; the roster changes, the judgment shouldn't). `budget` = mechanical, follows
+an existing pattern. `frontier` = high blast radius if subtly wrong (security, auth, money, data
+loss), or the approach itself takes judgment (novel algorithm, non-obvious concurrency/ordering,
+constraints that look like they conflict). `medium` = between.
 
 **Difficulty signals** (presence pushes up a tier; none present → budget): security/auth/crypto
 surface; concurrency, ordering, or race-condition correctness; non-obvious algorithmic or

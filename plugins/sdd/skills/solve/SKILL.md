@@ -1,7 +1,7 @@
 ---
 name: solve
-description: 'Implement one bd story by id in an isolated git worktree+branch (created inside the repo at .worktree/<id>), ending at needs-review for /validate. Runs on any tier — matched to the story''s own complexity call; warns on a frontier model solving a cheaper story, never blocks. --unattended (passed by /orchestrate when dispatching headless) replaces every live question with the existing spec-gap stop-and-hand-back — never pass it when running /solve yourself.'
-version: 1.9.0
+description: 'Implement one bd story by id in an isolated git worktree+branch at .worktree/<id>, ending at needs-review for /validate. Any tier — matched to the story''s own complexity call. --unattended (passed by /orchestrate when dispatching headless) turns every live question into the spec-gap stop-and-hand-back — never pass it yourself.'
+version: 1.9.1
 argument-hint: '[<story-id>] [--unattended]'
 disable-model-invocation: false
 user-invocable: true
@@ -19,35 +19,25 @@ Run as a budget-conscious solver. Read one story's contract from **bd** (the **W
 
 ## Tier classification
 
-Classify the session's model **by its exact ID, never by self-assessed capability** — "I can handle
-this" is not a reason to reclassify. Read the ID from the session environment / system prompt (it
-states one, e.g. `The exact model ID is claude-haiku-4-5`).
+Classify by **exact model ID, never self-assessed capability** — "I can handle this" is not a reason
+to reclassify. Read the ID from the session environment / system prompt (it states one, e.g.
+`The exact model ID is claude-haiku-4-5`). Rungs are ordered; each is defined by what the model can
+hold, and the markers are how you recognize it.
 
-Three rungs, ordered. Each rung is defined by **what the model can hold**, not by price alone — the
-ID list is how you recognize a rung, the definition is what the rung means:
+| Rung | What it holds | ID markers |
+|---|---|---|
+| `budget` | Bounded, fully-specified work. Thin reasoning, small effective attention — drifts as ambiguity or scope grows. | `haiku` `flash` `mini` `lite` `small` `nano` `luna` `kimi-k2` `kimi-for-coding`; MiniMax-M / Gemini Flash class |
+| `medium` | One real difficulty signal, contained to a single well-understood area. Larger working set; not for high-blast-radius subtlety. | `sonnet` `gpt-5.5` `gpt-5.6-terra`; Gemini Pro class |
+| `frontier` | Work where being subtly wrong is expensive, or the correct approach itself takes judgment. | `opus` `fable` `mythos` `gpt-5.6-sol` `k3`; Qwen3.8-Max / Kimi-K3 class, or equivalent top tier |
+| `unsure` | Anything not positively placed above. | — |
 
-- **budget** — cheap and fast; thin reasoning, small effective attention. Reliable on bounded,
-  fully-specified work; drifts as ambiguity or scope grows. IDs containing `haiku`, `flash`, `mini`,
-  `lite`, `small`, `nano`, `luna`, or `kimi-k2`, or a known budget tier (MiniMax-M-class, Gemini
-  Flash-class, `gpt-5-mini`/`gpt-5-nano`/`gpt-5.6-luna`, Kimi Code's `kimi-for-coding`).
-- **medium** — solid reasoning at moderate cost; holds a larger working set. Handles one real
-  difficulty signal contained to a single well-understood area; not for high-blast-radius subtlety.
-  IDs containing `sonnet`, `gpt-5.5`, or `gpt-5.6-terra`, or a Gemini Pro-class model.
-- **frontier** — strongest reasoning available. For work where being subtly wrong is expensive, or
-  where the correct approach itself takes judgment. IDs containing `opus`, `fable`, `mythos`, or
-  `gpt-5.6-sol`, or a Qwen3.8-Max-class (e.g. `qwen3.8-max-preview`) / Kimi-K3-class (`k3`,
-  `kimi-k3…`) / equivalent top-tier model.
-- **unsure** — anything you cannot positively place on the ladder.
+**A budget marker outranks any higher one** — `qwen3.8-max-lite` is budget, not frontier. Unsure
+between medium and frontier → **medium**; for a gated skill that means stopping, which is the safe
+direction: a false stop costs a line of output, a false pass costs a bad contract.
 
-**A budget marker outranks any higher marker** — a hypothetical `qwen3.8-max-lite` is budget, not
-frontier. Placeable on the ladder but unsure whether medium or frontier → treat it as **medium**.
-For a gated skill that means stopping, which is the safe direction: a false stop costs a line of
-output, a false pass costs a bad contract.
-
-**The gate.** A skill that gates on tier (`/specify`, `/refine`, `/orchestrate`) proceeds only on
-`frontier` and stops on `medium`, `budget`, **or** `unsure` — these three author the WHAT, where a
-subtly wrong contract is paid for by every later solve. A skill that merely notes its rung
-(`/solve`) reports it and continues on any of them. `/board` and `/validate` carry no tier gate.
+**The gate.** `/specify`, `/refine`, `/orchestrate` proceed only on `frontier` and stop on `medium`,
+`budget`, **or** `unsure` — they author the WHAT, where a subtly wrong contract is paid for by every
+later solve. `/solve` reports its rung and continues on any. `/board` and `/validate` are ungated.
 
 <!-- END SHARED -->
 

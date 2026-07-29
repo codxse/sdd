@@ -1,7 +1,7 @@
 ---
 name: board
-description: 'Show the bd backlog as a status board, or one story by its id. Read-only and runs on any model tier. Use when the user asks to see/list/view their stories or cases, "show the board", or "show story <id>".'
-version: 1.1.1
+description: 'Show the bd backlog as a status board, or one story by its id. Read-only, any model tier. Use when the user asks to see/list/view their stories, "show the board", or "show story <id>".'
+version: 1.1.2
 argument-hint: '[<story-id>]'
 user-invocable: true
 ---

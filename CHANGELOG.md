@@ -11,6 +11,24 @@ shipped at the time — `case-solvers` — and are left as written.
 
 ## [Unreleased]
 
+**Trimmed prompt weight, no behavior change.** The skill corpus drops 4,507 chars (~1,100 tokens)
+with nothing removed from any rule. The **Tier classification** map becomes a table — rung, what it
+holds, ID markers — while the conditional rules (budget-outranks, unsure→medium, the gate itself)
+stay prose, since that is where the anti-injection guarantees live: 2,421 → 1,871 chars in each of
+the five skills that inline it. The **Complexity Tier** rubric no longer restates what the three
+rungs mean; it points at Tier classification and keeps only what is unique to it — that you judge
+what the *story* demands, plus the difficulty signals, escalate-along-the-axis rule, and effort
+scale.
+
+The larger win is the six frontmatter `description:` fields, **3,740 → 2,307 chars (~358 tokens)**:
+unlike a skill body, these load in *every* session for routing whether or not a skill fires, so they
+were the only cost every user always pays. `/validate` alone went 1,473 → 672 and `/orchestrate` 924
+→ 533 — both had grown into run-on sentences restating mechanics the skill body already covers. Each
+description keeps its trigger phrases and the constraints a caller needs *before* invoking (the
+frontier gate, `--unattended` being `/orchestrate`-only); everything else moved to the body where it
+was already written. Skill versions: `/specify` `2.12.1`, `/refine` `1.11.1`, `/solve` `1.9.1`,
+`/validate` `1.16.1`, `/orchestrate` `1.7.1`, `/board` `1.1.2`.
+
 **BREAKING: renamed the project, the marketplace, and the workflow plugin from `case-solvers` to
 `sdd`.** The repo is now `codxse/sdd`, the marketplace id and plugin id are both `sdd`, the plugin
 directory moved `plugins/case-solvers/` → `plugins/sdd/`, and qualified invocations follow:
