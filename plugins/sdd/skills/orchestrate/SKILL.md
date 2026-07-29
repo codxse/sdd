@@ -222,9 +222,8 @@ Repeat until termination (step 6):
    a per-story subagent.** For each story a subagent hands back at `needs-review`:
    - **Mandatory review, no orchestrator judgment.** Read its **effort** from `bd show <id>`'s
      `## Complexity` line (`Recommended Solver: <tier> · effort <low|high|max>`); no such
-     section (a pre-rubric story) → fall back to `high`, `/validate --review`'s own default. A story
-     authored before this scale dropped `medium` may still record `effort medium` — pass it through
-     unchanged; the host's `/code-review` still accepts it. Run
+     section (a pre-rubric story) → fall back to `high`, `/validate --review`'s own default. An older
+     story may record a level outside that set; pass whatever is recorded through unchanged. Run
      `/validate <id> --review <effort> --unattended`. This runs on every story that reaches review,
      always — never skipped, never a guess about whether it's warranted. Its cost keys off the same
      Complexity call twice, with no orchestrator judgment in either dimension: the effort above picks

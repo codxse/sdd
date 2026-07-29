@@ -110,8 +110,8 @@ everything:
 - A signal about **subtlety or blast radius** (the signals above) → raise **tier**; more effort on a
   weaker model doesn't close a capability gap.
 
-**Effort** (`low`/`high`/`max` — this workflow's own scale) grades independently of tier. It has no
-`medium`: that word names a **rung** here, and one word must not mean two things on two axes.
+**Effort** (`low`/`high`/`max` — this workflow's own scale, never `medium`; that names a rung)
+grades independently of tier.
 
 State the call as `Recommended Solver: <tier> · <effort>` plus one line naming the driving signal(s),
 or "no difficulty signal — mechanical" for budget.
