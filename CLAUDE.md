@@ -120,7 +120,7 @@ publish the same two plugins under `plugins/`:
   bump it in **all five** manifests (`.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`,
   both marketplaces, and the repo-root `kimi.plugin.json`) so the three hosts stay in lockstep.
 - `/specify` and `/refine` share the contract rubrics in `plugins/sdd/shared/contract-rubrics.md`
-  (Problem Types, Atomicity Gate, AC Quality Rubric, Pre-write Guard, Output Format). That file is
+  (Atomicity Gate, AC Quality Rubric, Pre-write Guard, Output Format). That file is
   the single source, but it is **not read at runtime**: everything below its `BEGIN SHARED` marker is
   inlined verbatim into the `Contract Rubrics` section at the end of both SKILL.md files. Edit the
   rubrics **there**, then run `plugins/sdd/tests/rubrics-sync.sh --write`; never hand-edit a

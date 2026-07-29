@@ -1,7 +1,7 @@
 ---
 name: specify
 description: 'Author one bd story, or decompose a large goal into an epic. Frontier model only. Authoring only — /board views, /refine revises. Use when the user asks to specify or spec out a problem or goal, open a case, or write a new story or epic.'
-version: 2.12.2
+version: 2.13.0
 argument-hint: '<description>'
 user-invocable: true
 ---
@@ -110,16 +110,16 @@ Invoked as `/specify <description>` — the whole argument is the description to
 ## Authoring: Story vs Epic
 
 After the guards pass, hold every contract to **Contract Rubrics** at the end of this skill —
-Authoring principles, Problem Types, Atomicity Gate, Complexity Tier, Verification Mode, AC
-Quality Rubric, Pre-write Guard, and Output Format. They are part of this skill and already in
-context: there is no rubric file to locate, open, or read. Never author from memory of these bars
-when the text is right there.
+Authoring principles, Atomicity Gate, Complexity Tier, Verification Mode, AC Quality Rubric,
+Pre-write Guard, and Output Format. They are part of this skill and already in context: there is no
+rubric file to locate, open, or read. Never author from memory of these bars when the text is right
+there.
 
-Then classify the problem type and draft inference-first: explore the codebase rather than ask when the
-answer is there (budget ~3 Read + 2 Grep when the user names an artifact); settle scope-affecting
-unknowns one at a time, each with a recommended answer; verify every name the draft keeps (mandatory,
-unbudgeted). Run the Pre-write Guard and AC Quality Rubric on every story before it enters bd. Then
-judge size against the **Atomicity Gate**:
+Then draft inference-first: explore the codebase rather than ask when the answer is there (budget ~3
+Read + 2 Grep when the user names an artifact); settle scope-affecting unknowns one at a time, each
+with a recommended answer; verify every name the draft keeps (mandatory, unbudgeted). Run the
+Pre-write Guard and AC Quality Rubric on every story before it enters bd. Then judge size against
+the **Atomicity Gate**:
 
 - **Fits one budget pass → Story mode** — draft the full Output Format, then the **Staging Loop** to
   write, iterate, commit.
@@ -213,26 +213,11 @@ Single-writer discipline: `/specify` authors **new** contracts (story bodies) an
 - **INVEST.** Every story is **I**ndependent (schedulable alone — a hard ordering belongs in an epic's dependencies), **N**egotiable (outcome, never mechanism), **V**aluable (the `so that` names a real benefit), **E**stimable (grounded and unambiguous enough to size — the Atomicity Gate's unsettled middle), **S**mall (the Atomicity Gate's too big), **T**estable (AC Quality Rubric).
 - **No drift.** Don't restate the command, duplicate repo conventions, or add sections outside the
   template.
-- **Diagnosed, not hypothesized.** A Bugfix premise is the *observed* failure, never an inferred
+- **Diagnosed, not hypothesized.** A bug-fix premise is the *observed* failure, never an inferred
   cause.
 - **Grounded names.** Every artifact a story names (file/class/method/endpoint/table/config key)
   must be verified to exist via Read/Grep before writing — a budget solver trusts names. Can't
   verify → describe its role instead.
-
----
-
-## Problem Types
-
-| Type | Hallmark | Required (beyond core) |
-|---|---|---|
-| **Feature** | Build new functionality. | core only |
-| **Bugfix** | Reproduce → fix → regression. | core only |
-| **Refactor** | Behavior preserved, structure cleanup. | core only |
-| **Design** | Design a system/API/data model first. | Deliverable Format |
-| **Investigation** | No code change; deliverable = findings. | Deliverable Format |
-
-**Core sections** (every story): Title, Problem Statement, Context, Constraints, Acceptance
-Criteria, Verification, Out of Scope.
 
 ---
 
@@ -265,7 +250,7 @@ which model actually runs `/solve`.
 **Unsettled middle (ambiguity)** — any → settle it in the contract, or split it out:
 - An AC whose test forces a design decision the contract doesn't settle (invent an API shape, pick
   a data model, choose where state lives).
-- **Bugfix whose root cause isn't reproduced and confirmed.** Diagnosing an unknown failure is what
+- **Bug fix whose root cause isn't reproduced and confirmed.** Diagnosing an unknown failure is what
   budget models are worst at. While the cause is a hypothesis, make diagnosis its own story for a
   frontier model (Verification: human); the budget solver gets only the mechanical fix once the
   cause is observed.
@@ -346,8 +331,8 @@ For each Acceptance Criteria scenario, before it goes into bd:
   effect, or absence). A method-call surrogate for an observable in the result = mechanism-bound,
   revise.
 - **Generalizable** — representative test data, not accidental.
-- **Exhaustive** — new behavior (positive) AND preserved behavior (regression). Bugfix: reproduces +
-  fixed. Feature: happy path + boundary. Refactor: identical before/after.
+- **Exhaustive** — new behavior (positive) AND preserved behavior (regression): happy path +
+  boundary; a bug fix also reproduces the failure.
 - **Readable** — business terminology; raw identifiers with business meaning → Glossary.
 
 ---
@@ -366,7 +351,7 @@ Before a story enters bd, scan and strip:
 - AC scenarios **not** inside a fenced ` ```gherkin ` block (bare lines, or relying on trailing-space
   breaks) → wrap them in the fence. This is what holds the Given/When/Then formatting in rendered
   markdown; bare lines collapse to one paragraph.
-- AC `gherkin` block missing its opening `Feature:` title line → add it, titled by problem type (see Output Format).
+- AC `gherkin` block missing its opening `Feature:` title line → add it, titled by the capability delivered (see Output Format).
 - AC step written as "I" or narrating UI mechanics → rewrite declarative, third person, actor named.
 - Prose paragraph hard-wrapped across lines → join to one line (see Output Format; `gherkin` block exempt).
 
@@ -379,7 +364,7 @@ lurking decision → settle it or split.
 
 ## Output Format (story body)
 
-Each story's bd body uses this template. Mandatory sections depend on problem type.
+Each story's bd body uses this template. Every section is mandatory unless marked optional.
 
 **No hard wrapping in prose.** Each paragraph/list-item is **one unbroken line** — never wrap at a
 column width (stray breaks survive a paste into Basecamp/Linear; markdown and `bd show` soft-wrap
@@ -395,7 +380,7 @@ I want [what — the outcome],
 so that [why — the benefit].
 ```
 
-[Then one paragraph: the problem, why it must be solved, the desired outcome. State the outcome, don't narrate mechanism. The actor by type — Feature/Design: who gets the capability; Bugfix: who the observed failure blocks; Refactor: who maintains the code; Investigation: who the findings inform.]
+[Then one paragraph: the problem, why it must be solved, the desired outcome. State the outcome, don't narrate mechanism. The actor is whoever gets the capability — for a bug fix, whoever the observed failure blocks.]
 
 ## Context
 [Background, domain knowledge, classification assumptions. May name existing artifacts as pointers. For an environment-sensitive bug, state facts the solver can't infer from code (proxy/CA, OS/device, pinned versions). Empty if none.]
@@ -410,12 +395,12 @@ so that [why — the benefit].
 
 ## Acceptance Criteria
 
-Put **every** scenario inside one fenced `gherkin` block that opens with a `Feature:` line titling the behavior under test. Title it by problem type — **Feature/Design**: the capability delivered; **Bugfix**: the expected behavior being restored (never the bug); **Refactor**: the behavior preserved; **Investigation**: the question the findings answer. The fence preserves the line breaks and indentation literally — identical in `bd show` and rendered markdown — so the Given/When/Then never collapse into a run-on line. Never use trailing-space line breaks (invisible, silently dropped). One blank line separates scenarios.
+Put **every** scenario inside one fenced `gherkin` block that opens with a `Feature:` line titling the behavior under test. Title it by the capability delivered — for a bug fix, by the expected behavior being restored, never by the bug. The fence preserves the line breaks and indentation literally — identical in `bd show` and rendered markdown — so the Given/When/Then never collapse into a run-on line. Never use trailing-space line breaks (invisible, silently dropped). One blank line separates scenarios.
 
 Scenarios clustering into distinct behaviors → group each cluster under a `Rule:` line (one business rule each, its scenarios indented beneath it). The same steps repeated over many values → one `Scenario Outline` with an `Examples` table, not near-duplicate scenarios.
 
 ```gherkin
-Feature: [behavior under test — titled by problem type]
+Feature: [behavior under test — the capability delivered]
 
   Scenario: [title]
     Given [initial condition — specific value, observable state]
@@ -442,9 +427,6 @@ Recommended Solver: [budget | medium | frontier] · effort [low | high | max]
 ## Files of Interest
 [Optional. Only if the user gave a pointer. Points to an artifact's role, not an instruction.]
 - `path/to/file` — [one line role.]
-
-## Deliverable Format
-[ONLY for Design / Investigation: expected output shape. Skip otherwise.]
 ````
 
 <!-- END GENERATED -->

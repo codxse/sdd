@@ -1,7 +1,7 @@
 ---
 name: solve
 description: 'Implement one bd story by id in an isolated git worktree+branch at .worktree/<id>, ending at needs-review for /validate. Any tier — matched to the story''s own complexity call. --unattended (passed by /orchestrate when dispatching headless) turns every live question into the spec-gap stop-and-hand-back — never pass it yourself.'
-version: 1.9.1
+version: 1.10.0
 argument-hint: '[<story-id>] [--unattended]'
 disable-model-invocation: false
 user-invocable: true
@@ -128,11 +128,10 @@ All four pass → execute (the sketches become your test plan). Any fail → **d
 ### 5. Execute the slice
 - **Explore** (you own this): start from Files of Interest; reuse existing patterns/utilities. Honor every Constraint; stay inside Out of Scope. On a frontier tier, this is the step you delegate to the exploration-specialist subagent (Senior Solver rules) — the findings come back to you; the mechanism choice stays yours.
 - **Plan**: brief, verifiable, assumptions surfaced. A step with no clear verify → contract too weak → Needs Clarification (see *Stop on Ambiguity* below).
-- **Diagnose before fixing** (Bugfix): the contract states a *suspected* cause — treat it as a lead. Reproduce and capture the real signal (exception+stack, failing assertion, real status/body, the log at the failure point) before editing. Device/integration bug you can't unit-test → your first change is the minimum logging to surface what actually happens, not a behavior change. Captured signal contradicts the stated cause → the contract is wrong: Needs Clarification, not more guessing. Don't grind on an unobserved cause.
+- **Diagnose before fixing** (bug fix): the contract states a *suspected* cause — treat it as a lead. Reproduce and capture the real signal (exception+stack, failing assertion, real status/body, the log at the failure point) before editing. Device/integration bug you can't unit-test → your first change is the minimum logging to surface what actually happens, not a behavior change. Captured signal contradicts the stated cause → the contract is wrong: Needs Clarification, not more guessing. Don't grind on an unobserved cause.
 - **TDD**: translate the machine-assertable AC into test(s) → run red → implement minimum to green → refactor within the slice, staying green.
   - **Don't mock the thing under test.** If an AC is about an external boundary (SDK, network, DB driver, device API), a test stubbing that exact boundary proves nothing. Green from a mocked boundary is not acceptance — exercise the real boundary, or recognise the AC needs a `human`/`auto+human` check at `/validate` and say so.
   - No test harness, or an AC genuinely can't be automated → fall back to a concrete runtime observation and flag it for the `/validate` checkpoint. Can't write a test for an AC at all → Stop-on-Ambiguity ("AC not verifiable as written").
-  - **Design / Investigation** stories → no TDD; produce the deliverable, verify against Deliverable Format.
 - **Verify** every AC: positive AND regression. Fix failures you understand; a blocking gap → stop.
 
 ### 6. Hand to review — never merge

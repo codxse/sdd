@@ -11,6 +11,29 @@ shipped at the time — `case-solvers` — and are left as written.
 
 ## [Unreleased]
 
+**Removed the Problem Types taxonomy.** Stories were classified as Feature / Bugfix / Refactor /
+Design / Investigation, and five places downstream branched on that classification — but the type
+was never recorded anywhere. It is not a template section, not a bd label, and bd's own `-t` is
+`story|epic`. So `/solve`'s "Design / Investigation stories → no TDD" rule asked about a fact the
+story does not state, forcing the solver to re-infer the type from prose — exactly the per-model
+divergence the Atomicity Gate exists to remove. In practice only Feature stories were ever authored.
+
+Gone: the five-row table (whose entire payload was "Design and Investigation also need a Deliverable
+Format section"), the `Deliverable Format` template section, and `/solve`'s no-TDD branch — every
+story is now TDD. The two type-conditional lines in the Output Format template (which actor to name,
+how to title the gherkin `Feature:` line) now state the general rule with a bug-fix aside. Bug-fix
+guardrails are unaffected: *Diagnosed, not hypothesized*, the Atomicity Gate's unreproduced-root-cause
+bullet, the AC rubric's reproduce-plus-fix requirement, and `/solve`'s *Diagnose before fixing* all
+survive as conditionals — they never needed a taxonomy, only the question "is this a bug fix?"
+Skill versions: `/specify` `2.13.0`, `/refine` `1.12.0`, `/solve` `1.10.0`.
+
+**Difficulty signals now state their arithmetic.** The rule read "presence pushes up a tier", which
+never said up from what, to what — so the five signals had no mapping to act on. It now maps
+explicitly (none → `budget`; one, contained → `medium`; high blast radius or several interacting →
+`frontier`, matching Tier classification's own definition of the `medium` rung) and lists the signals
+as a checkable set rather than a semicolon run-on. The Complexity Tier rungs also moved into a table,
+matching the Tier classification block above them.
+
 **Dropped `medium` from the effort scale — it is now `low`/`high`/`max`.** Collapsing the tier
 vocabulary onto one ladder made `medium` a rung name, so it was doing double duty: a rung on the
 capability axis and a level on the effort axis, sitting side by side in the same
