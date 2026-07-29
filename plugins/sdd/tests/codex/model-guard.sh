@@ -40,13 +40,13 @@ DESCRIPTIONS=(
 )
 
 REFINE_CMDS=(
-  '$case-solvers:refine bd-1'
-  '$case-solvers:refine 7'
+  '$sdd:refine bd-1'
+  '$sdd:refine 7'
 )
 
 ORCHESTRATE_CMDS=(
-  '$case-solvers:orchestrate bd-1'
-  '$case-solvers:orchestrate 42'
+  '$sdd:orchestrate bd-1'
+  '$sdd:orchestrate 42'
 )
 
 STOP_RE='planning model'
@@ -138,7 +138,7 @@ run_set() {
 }
 
 CASE_CMDS=()
-for desc in "${DESCRIPTIONS[@]}"; do CASE_CMDS+=("\$case-solvers:case $desc"); done
+for desc in "${DESCRIPTIONS[@]}"; do CASE_CMDS+=("\$sdd:case $desc"); done
 
 run_set "case"        "${CASE_CMDS[@]}"
 run_set "refine"      "${REFINE_CMDS[@]}"

@@ -1,11 +1,11 @@
 {
-  "name": "case-solvers",
+  "name": "sdd",
   "description": "Codex plugins by nadiar: a bd-backed workflow (/case, /refine, /board, /solve, /evaluate, /orchestrate) and context-writing helpers. Shares one skills/ tree with the Claude Code build.",
   "plugins": [
     {
-      "name": "case-solvers",
-      "source": { "source": "local", "path": "./plugins/case-solvers" },
-      "version": "2.25.1",
+      "name": "sdd",
+      "source": { "source": "local", "path": "./plugins/sdd" },
+      "version": "3.0.0",
       "policy": { "installation": "AVAILABLE", "authentication": "ON_USE" },
       "category": "Productivity"
     },

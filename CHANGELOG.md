@@ -1,13 +1,38 @@
 # Changelog
 
-All notable changes to the **case-solvers** marketplace are documented here.
+All notable changes to the **sdd** marketplace (published as **case-solvers** through `2.25.1`) are
+documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Versions track the published plugin/marketplace, not the skills' internal frontmatter
-versions (shown in parentheses where relevant).
+versions (shown in parentheses where relevant). Entries below `3.0.0` name the project as it
+shipped at the time — `case-solvers` — and are left as written.
 
 ## [Unreleased]
+
+**BREAKING: renamed the project, the marketplace, and the workflow plugin from `case-solvers` to
+`sdd`.** The repo is now `codxse/sdd`, the marketplace id and plugin id are both `sdd`, the plugin
+directory moved `plugins/case-solvers/` → `plugins/sdd/`, and qualified invocations follow:
+`$case-solvers:orchestrate` → `$sdd:orchestrate`, agent `case-solvers:case-reviewer` →
+`sdd:case-reviewer`. The name now describes what the plugin is — spec-driven development — rather
+than one of its six commands.
+
+**Nothing about the workflow itself changed.** `/case`, `/refine`, `/board`, `/solve`, `/evaluate`,
+and `/orchestrate` keep their names ("case" is the domain word for a story, not the project name),
+the reviewer agents stay `case-reviewer` / `case-reviewer-strong`, and bd backlogs are untouched.
+Only `/evaluate` (`1.15.0` → `1.15.1`) changed prose at all: the reviewer-agent namespacing example.
+
+**It is breaking for installs, not for usage.** Plugin id, marketplace id, and the host cache paths
+all move, so an in-place `/plugin update` won't reach the new plugin — remove the old marketplace
+and plugin and install fresh. GitHub redirects the old repo name, so an untouched marketplace entry
+still resolves, but keeps serving the old id. See *Migrating from `case-solvers`* in the README.
+Codex and Kimi Code users must also re-copy the reviewer agent files from their new paths.
+
+Plugin & marketplace entry `2.25.1` → `3.0.0`, in all five manifests. `writing-claude-md` stays
+`1.1.0` — only its `homepage`/`repository` URLs moved. The three host test libs
+(`tests/{claude,codex,kimi}/lib.sh`) now resolve the `sdd` install; `tests/codex/model-guard.sh`
+invokes `$sdd:<skill>`; CI runs the sync checks from `plugins/sdd/tests/`.
 
 **Added Codex Model Guard coverage and host-authenticated model identity.**
 `plugins/case-solvers/tests/codex/model-guard.sh` is now the third host twin: it runs `/case`,

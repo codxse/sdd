@@ -1,10 +1,11 @@
-# Case Solvers
+# SDD
 
-Two agent plugins for **Claude Code**, **OpenAI Codex**, and **Kimi Code** — same skills, any host.
+**Spec-driven development** as two agent plugins for **Claude Code**, **OpenAI Codex**, and
+**Kimi Code** — same skills, any host.
 
 | Plugin | Skills | Purpose |
 |--------|--------|---------|
-| `case-solvers` | `/case`, `/refine`, `/board`, `/solve`, `/evaluate`, `/orchestrate` | bd-backed, parallel coding workflow: author stories/epics → solve in worktrees → review & merge, or automate a whole epic behind one PR |
+| `sdd` | `/case`, `/refine`, `/board`, `/solve`, `/evaluate`, `/orchestrate` | bd-backed, parallel coding workflow: author stories/epics → solve in worktrees → review & merge, or automate a whole epic behind one PR |
 | `writing-claude-md` | `/writing-claude-md` | Write lean, high-signal CLAUDE.md / AGENTS.md context files |
 
 ## Why I built this
@@ -79,9 +80,9 @@ marketplace once, then install what you want.
 **Claude Code**
 
 ```
-/plugin marketplace add codxse/case-solvers
-/plugin install case-solvers@case-solvers
-/plugin install writing-claude-md@case-solvers
+/plugin marketplace add codxse/sdd
+/plugin install sdd@sdd
+/plugin install writing-claude-md@sdd
 ```
 
 Type the commands in a Claude Code session (not your shell). `/plugin` on its own opens the plugin
@@ -90,9 +91,9 @@ browser if you'd rather click. Verify with `/help` — the new commands appear i
 **Codex**
 
 ```
-codex plugin marketplace add codxse/case-solvers
-codex plugin add case-solvers@case-solvers
-codex plugin add writing-claude-md@case-solvers
+codex plugin marketplace add codxse/sdd
+codex plugin add sdd@sdd
+codex plugin add writing-claude-md@sdd
 ```
 
 These run in your shell, not in a Codex session, and need a Codex CLI new enough to have the plugin
@@ -101,17 +102,17 @@ subcommand — check with `codex plugin --help`. Verify the install with `codex 
 On Codex, `/solve` and `/evaluate` are **slash-only** — they bake work into a branch, so they never
 auto-fire mid-conversation. `/case`, `/refine`, `/board`, and `/orchestrate` also answer plain
 English (for example, "run the epic" or "show the board"). Invoke any plugin skill explicitly with
-its qualified name, such as `$case-solvers:orchestrate <epic-id>`.
+its qualified name, such as `$sdd:orchestrate <epic-id>`.
 
 **Kimi Code**
 
 ```
-/plugins install https://github.com/codxse/case-solvers
+/plugins install https://github.com/codxse/sdd
 ```
 
 Type it in a Kimi Code session (not your shell), then run `/reload` (or `/new`) — plugin changes
 don't apply to the current session. Kimi's GitHub install reads the manifest at the repository
-root, so both marketplace plugins ship as **one** Kimi plugin named `case-solvers` carrying all
+root, so both marketplace plugins ship as **one** Kimi plugin named `sdd` carrying all
 seven skills; there is no per-plugin pick on this host. Verify with `/plugins list`, or open the
 manager with `/plugins`.
 
@@ -123,8 +124,8 @@ implicit-invocation gate (no equivalent of Codex's `agents/openai.yaml`), so `/s
 definitions on this host — for `/evaluate`'s reviewer, see the copy step under *Reviewer agents*
 below.
 
-**Requirements:** the `bd` CLI on your `PATH` for `case-solvers` — see
-[the command reference below](#case-solvers--bd-backed-parallel-coding-workflow). `/orchestrate`
+**Requirements:** the `bd` CLI on your `PATH` for `sdd` — see
+[the command reference below](#sdd--bd-backed-parallel-coding-workflow). `/orchestrate`
 additionally needs the `gh` CLI, authenticated, for opening its final PR. `writing-claude-md` has no
 dependencies.
 
@@ -135,7 +136,7 @@ definition instead of prose. On **Claude Code** they load automatically with the
 **Codex**, plugins don't auto-load agents yet — copy the TOML templates into your project once:
 
 ```sh
-cp ~/.codex/plugins/cache/case-solvers/case-solvers/<version>/agents/*.toml .codex/agents/
+cp ~/.codex/plugins/cache/sdd/sdd/<version>/agents/*.toml .codex/agents/
 ```
 
 Without them, `/evaluate` falls back to pinning the model explicitly on a general subagent — same
@@ -146,7 +147,7 @@ agents directory once:
 
 ```sh
 mkdir -p ~/.agents/agents
-cp ~/.kimi-code/plugins/managed/case-solvers/plugins/case-solvers/agents/*.md ~/.agents/agents/
+cp ~/.kimi-code/plugins/managed/sdd/plugins/sdd/agents/*.md ~/.agents/agents/
 ```
 
 (If you set `KIMI_CODE_HOME`, the managed copy lives under it instead; re-copy after a plugin
@@ -183,20 +184,20 @@ costs you a line of output, never a bad story.
 **Claude Code**
 
 ```
-/plugin update case-solvers
+/plugin update sdd
 ```
 
 **Codex** — refresh the Git marketplace snapshot, then install the new plugin version:
 
 ```sh
-codex plugin marketplace upgrade case-solvers
-codex plugin add case-solvers@case-solvers
+codex plugin marketplace upgrade sdd
+codex plugin add sdd@sdd
 ```
 
 For the context-writing plugin, substitute its name in the second command:
 
 ```sh
-codex plugin add writing-claude-md@case-solvers
+codex plugin add writing-claude-md@sdd
 ```
 
 These run in your shell. Confirm the installed version with `codex plugin list`, then start a new
@@ -207,12 +208,45 @@ and install each version into its own directory.
 `/reload`:
 
 ```
-/plugins install https://github.com/codxse/case-solvers
+/plugins install https://github.com/codxse/sdd
 ```
+
+### Migrating from `case-solvers`
+
+`3.0.0` renamed the project, the marketplace, and the plugin from `case-solvers` to `sdd`. The
+commands themselves are unchanged — `/case`, `/refine`, `/board`, `/solve`, `/evaluate`,
+`/orchestrate` all still work, and your bd backlog is untouched. But an in-place update won't reach
+you: the plugin now installs under a new id, so remove the old one and install fresh.
+
+**Claude Code**
+
+```
+/plugin uninstall case-solvers@case-solvers
+/plugin marketplace remove case-solvers
+/plugin marketplace add codxse/sdd
+/plugin install sdd@sdd
+```
+
+**Codex**
+
+```sh
+codex plugin remove case-solvers@case-solvers
+codex plugin marketplace remove case-solvers
+codex plugin marketplace add codxse/sdd
+codex plugin add sdd@sdd
+```
+
+**Kimi Code** — remove the old plugin via `/plugins`, then install
+`https://github.com/codxse/sdd` and `/reload`.
+
+Repeat the plugin step for `writing-claude-md` if you use it. On Codex and Kimi Code, re-copy the
+reviewer agent files from the new path (see *Reviewer agents* above) — the old copies name a
+plugin that no longer exists. The GitHub repo redirects from the old name, so an unchanged
+marketplace entry keeps resolving, but it will keep serving you the old plugin id.
 
 ---
 
-## `case-solvers` — bd-backed, parallel coding workflow
+## `sdd` — bd-backed, parallel coding workflow
 
 The [three roles](#why-i-built-this) as commands: the **architect** (`/case`, `/refine`), the
 **solver** (`/solve`), and you, the **evaluator** (`/evaluate`). Work lives in

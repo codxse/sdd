@@ -16,10 +16,10 @@ resolve_install_path() {
   local reg="$HOME/.claude/plugins/installed_plugins.json"
   local p=""
   if [ -f "$reg" ] && command -v jq >/dev/null 2>&1; then
-    p=$(jq -r '.plugins["case-solvers@case-solvers"][0].installPath // empty' "$reg" 2>/dev/null)
+    p=$(jq -r '.plugins["sdd@sdd"][0].installPath // empty' "$reg" 2>/dev/null)
   fi
   if [ -z "$p" ]; then
-    p=$(ls -d "$HOME"/.claude/plugins/cache/case-solvers/case-solvers/*/ 2>/dev/null | sort -V | tail -1)
+    p=$(ls -d "$HOME"/.claude/plugins/cache/sdd/sdd/*/ 2>/dev/null | sort -V | tail -1)
   fi
   printf '%s' "${p%/}"
 }
@@ -31,7 +31,7 @@ sync_plugin() {
   local dst
   dst="$(resolve_install_path)"
   if [ -z "$dst" ] || [ ! -d "$dst" ]; then
-    echo "sync_plugin: cannot find an installed case-solvers copy to sync into." >&2
+    echo "sync_plugin: cannot find an installed sdd copy to sync into." >&2
     echo "  install it once with the Claude plugin manager, then re-run." >&2
     return 1
   fi

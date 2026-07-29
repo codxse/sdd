@@ -1,4 +1,4 @@
-## Case Solvers workflow — reach for these instead of ad-hoc bd/git
+## SDD workflow — reach for these instead of ad-hoc bd/git
 
 - `/case <description>` — author a NEW story or epic from a problem/goal not yet in bd. Planning-tier only.
 - `/refine <story-id>` — revise an EXISTING story's contract (e.g. labelled needs-refinement). Planning-tier only, WHAT-only, never touches code.

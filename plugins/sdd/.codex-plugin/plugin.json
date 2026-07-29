@@ -1,13 +1,13 @@
 {
-  "name": "case-solvers",
-  "version": "2.25.1+codex.20260723125706",
+  "name": "sdd",
+  "version": "3.0.0+codex.20260729153918",
   "description": "A bd-backed, parallel-capable coding workflow: /case (frontier model) authors stories/epics in Beads and /refine revises them, /board renders the backlog, /solve (any model tier) implements one in an isolated git worktree, /evaluate merges it after human review, /orchestrate (frontier model) automates the solve-review-land loop for a whole epic behind one final PR. Dependency-aware; bd stays hidden behind the commands. Requires the bd (Beads) CLI.",
   "author": {
     "name": "nadiar",
     "email": "codex@nadiar.id"
   },
-  "homepage": "https://github.com/codxse/case-solvers",
-  "repository": "https://github.com/codxse/case-solvers",
+  "homepage": "https://github.com/codxse/sdd",
+  "repository": "https://github.com/codxse/sdd",
   "license": "MIT",
   "keywords": [
     "workflow",
@@ -26,10 +26,10 @@
   ],
   "skills": "./skills/",
   "interface": {
-    "displayName": "Case Solvers",
+    "displayName": "SDD",
     "shortDescription": "A bd-backed, parallel-capable coding workflow: author, refine, solve, evaluate, and orchestrate stories.",
     "longDescription": "Manage a Beads-backed engineering workflow from story authoring through isolated implementation, human-reviewed merge, and whole-epic orchestration behind a single final PR.",
-    "defaultPrompt": "Show the Case Solvers board and help me choose the next appropriate workflow action.",
+    "defaultPrompt": "Show the SDD board and help me choose the next appropriate workflow action.",
     "capabilities": [
       "Story authoring",
       "Backlog viewing",

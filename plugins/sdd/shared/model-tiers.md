@@ -1,4 +1,4 @@
-# Model Tiers — shared by all case-solvers skills
+# Model Tiers — shared by all sdd skills
 
 The model-tier classification for the whole plugin: which model IDs are **budget** vs **planning**.
 Every skill classifies its own model from its ID by the rules below — the rules are identical across

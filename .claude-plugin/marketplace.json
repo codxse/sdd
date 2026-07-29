@@ -1,13 +1,13 @@
 {
-  "name": "case-solvers",
+  "name": "sdd",
   "description": "Claude Code plugins by nadiar: workflow skills (/case, /refine, /board, /solve, /evaluate, /orchestrate) and context-writing helpers.",
   "owner": { "name": "nadiar", "email": "codex@nadiar.id" },
   "plugins": [
     {
-      "name": "case-solvers",
-      "source": "./plugins/case-solvers",
+      "name": "sdd",
+      "source": "./plugins/sdd",
       "description": "A bd-backed, parallel-capable workflow: /case authors stories/epics in Beads, /refine revises a story, /board shows the backlog, /solve implements one in an isolated worktree, /evaluate merges after human review, /orchestrate automates the solve-review-land loop for a whole epic behind one final PR. Requires the bd (Beads) CLI.",
-      "version": "2.25.1",
+      "version": "3.0.0",
       "author": { "name": "nadiar", "email": "codex@nadiar.id" },
       "license": "MIT",
       "category": "workflow",

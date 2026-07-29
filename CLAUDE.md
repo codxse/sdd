@@ -1,4 +1,4 @@
-# Case Solvers — a Claude Code, Codex & Kimi Code plugin marketplace
+# SDD — a Claude Code, Codex & Kimi Code plugin marketplace
 
 This repo ships agent **plugins**, not an application. The "source" is prompt files (`SKILL.md`), so
 there is no unit-test suite — verifying a change usually means reading the prompt and the
@@ -10,9 +10,9 @@ plugin carries two manifests
 (`.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`) over the *same* `skills/<name>/SKILL.md`
 files, and the repo carries two marketplaces (`.claude-plugin/marketplace.json`,
 `.agents/plugins/marketplace.json`). Never fork the skill prose per host — edit the one SKILL.md.
-The same dual-manifest pattern covers **subagent definitions**: `plugins/case-solvers/agents/` ships
+The same dual-manifest pattern covers **subagent definitions**: `plugins/sdd/agents/` ships
 each reviewer agent twice — `<name>.md` (Claude Code format, auto-discovered from `agents/` and
-listed namespaced as `case-solvers:<name>`; do **not** add an `agents` key to the manifest — Claude
+listed namespaced as `sdd:<name>`; do **not** add an `agents` key to the manifest — Claude
 Code rejects the whole plugin on unknown manifest keys) and `<name>.toml` (Codex format; Codex
 plugins don't auto-load agents, so
 users copy the TOMLs into `.codex/agents/`, per the README). On Kimi Code the same `<name>.md`
@@ -23,10 +23,10 @@ Codex's per-skill `agents/openai.yaml` opts a skill out of implicit invocation
 (`policy.allow_implicit_invocation: false`); omit it when the skill should be model-invocable.
 Shared frontmatter must keep `disable-model-invocation: false` so Codex accepts and discovers the
 skill. The exception is behavioral guards that must hold on a budget model:
-`plugins/case-solvers/tests/{claude,codex,kimi}/model-guard.sh` run `/case`, `/refine`, and
+`plugins/sdd/tests/{claude,codex,kimi}/model-guard.sh` run `/case`, `/refine`, and
 `/orchestrate` headless across multiple trials (including override-injection descriptions) and
 assert each Model Guard stops it. Claude uses Haiku and `/case`; Codex uses `gpt-5.6-luna` plus
-explicit `$case-solvers:case` mentions; Kimi uses `kimi-code/kimi-for-coding` plus `/skill:case`.
+explicit `$sdd:case` mentions; Kimi uses `kimi-code/kimi-for-coding` plus `/skill:case`.
 Codex's generic base prompt names only GPT-5, so its default plugin hook reads the host-provided
 `model` field and injects the exact slug. The harnesses call the real model, so they're slow and
 probabilistic — run them when changing any Model Guard. All three run model CLIs through the shared minimal environment
@@ -36,7 +36,7 @@ helpers live under each host directory; `tests/lib.sh` keeps only the host-agnos
 **Kimi Code breaks the per-plugin manifest pattern.** Its GitHub install reads the manifest at the
 *repository* root only, so instead of per-plugin `.kimi-plugin/` dirs there is a single root
 `kimi.plugin.json` declaring both `skills/` trees — both marketplace plugins ship to Kimi as one
-plugin named `case-solvers`. The manifest also ports the session-primer hook (`SessionStart` +
+plugin named `sdd`. The manifest also ports the session-primer hook (`SessionStart` +
 `PreCompact`) via its `hooks` field, with `$KIMI_PLUGIN_ROOT` in place of `${CLAUDE_PLUGIN_ROOT}`.
 Two Kimi gaps are accepted and documented in the README: plugins can't ship subagent definitions —
 worked around, not solved: Kimi's agent loader reads the Claude-format `agents/*.md` verbatim
@@ -51,7 +51,7 @@ Kimi rests on skill prose.
 `.claude-plugin/marketplace.json` (Claude Code) and `.agents/plugins/marketplace.json` (Codex)
 publish the same two plugins under `plugins/`:
 
-- **case-solvers** — `/case`, `/refine`, `/board`, `/solve`, `/evaluate`, `/orchestrate`: a
+- **sdd** — `/case`, `/refine`, `/board`, `/solve`, `/evaluate`, `/orchestrate`: a
   bd-backed, parallel-capable coding workflow.
 - **writing-claude-md** — `/writing-claude-md`: authoring lean, high-signal context files.
 
@@ -113,11 +113,11 @@ publish the same two plugins under `plugins/`:
   marketplace/plugin `version` tracks the published plugin, not the per-skill frontmatter versions —
   bump it in **all five** manifests (`.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`,
   both marketplaces, and the repo-root `kimi.plugin.json`) so the three hosts stay in lockstep.
-- `/case` and `/refine` share the contract rubrics in `plugins/case-solvers/shared/contract-rubrics.md`
+- `/case` and `/refine` share the contract rubrics in `plugins/sdd/shared/contract-rubrics.md`
   (Problem Types, Budget-Solver Fit, AC Quality Rubric, Pre-write Guard, Output Format). That file is
   the single source, but it is **not read at runtime**: everything below its `BEGIN SHARED` marker is
   inlined verbatim into the `Contract Rubrics` section at the end of both SKILL.md files. Edit the
-  rubrics **there**, then run `plugins/case-solvers/tests/rubrics-sync.sh --write`; never hand-edit a
+  rubrics **there**, then run `plugins/sdd/tests/rubrics-sync.sh --write`; never hand-edit a
   skill's generated block. The script with no flag verifies both copies and fails on drift — pure text
   comparison, so unlike the other tests it's fast, deterministic, and needs no model. That's why both
   sync scripts are wired into CI (`.github/workflows/checks.yml`, on push + PR): both hosts install
@@ -134,11 +134,11 @@ publish the same two plugins under `plugins/`:
     `${CLAUDE_PLUGIN_ROOT}` is substituted inline in skill content by Claude Code but **not** by Codex,
     so it would fork the prose per host. Inlined text needs neither, which is why the skills carry no
     path-resolution instructions at all. Don't reintroduce a runtime read.
-- All five skills share the model-tier map in `plugins/case-solvers/shared/model-tiers.md` (Tier
+- All five skills share the model-tier map in `plugins/sdd/shared/model-tiers.md` (Tier
   classification — the budget/planning/unsure markers). Same pattern as
   the contract rubrics: single source, **not read at runtime**, inlined verbatim into a `Model Tiers`
   section of every SKILL.md. Edit the map **there**, then run
-  `plugins/case-solvers/tests/model-tiers-sync.sh --write`; never hand-edit a skill's generated block.
+  `plugins/sdd/tests/model-tiers-sync.sh --write`; never hand-edit a skill's generated block.
   The script with no flag verifies all five copies and fails on drift — pure text comparison, wired
   into CI like `rubrics-sync.sh`. Adding a model (or a host) is a one-file edit here, not five.
   - **Reviewer pinning lives natively in `skills/evaluate/SKILL.md`** (moved there in 2.24.1 —

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# lib.sh — host-agnostic helpers for the case-solvers test harness.
+# lib.sh — host-agnostic helpers for the sdd test harness.
 #
 # Host-specific pieces (where the plugin is installed, how to sync the working
 # tree onto it) live in claude/lib.sh and kimi/lib.sh; each test sources the

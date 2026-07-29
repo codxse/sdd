@@ -11,12 +11,12 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lib.sh"
 resolve_install_path() {
   local codex_home_dir version p=""
   codex_home_dir="${CODEX_HOME:-$HOME/.codex}"
-  version=$(codex plugin list 2>/dev/null | awk '$1 == "case-solvers@case-solvers" && $2 ~ /^installed/ { print $3; exit }')
+  version=$(codex plugin list 2>/dev/null | awk '$1 == "sdd@sdd" && $2 ~ /^installed/ { print $3; exit }')
   if [ -n "$version" ]; then
-    p="$codex_home_dir/plugins/cache/case-solvers/case-solvers/$version"
+    p="$codex_home_dir/plugins/cache/sdd/sdd/$version"
   fi
   if [ ! -d "$p" ]; then
-    p=$(ls -d "$codex_home_dir"/plugins/cache/case-solvers/case-solvers/*/ 2>/dev/null | sort -V | tail -1)
+    p=$(ls -d "$codex_home_dir"/plugins/cache/sdd/sdd/*/ 2>/dev/null | sort -V | tail -1)
   fi
   printf '%s' "${p%/}"
 }
@@ -25,7 +25,7 @@ sync_plugin() {
   local dst
   dst="$(resolve_install_path)"
   if [ -z "$dst" ] || [ ! -d "$dst" ]; then
-    echo "sync_plugin: cannot find an installed case-solvers copy to sync into." >&2
+    echo "sync_plugin: cannot find an installed sdd copy to sync into." >&2
     echo "  install it once with the Codex plugin manager, then re-run." >&2
     return 1
   fi
