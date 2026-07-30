@@ -370,7 +370,8 @@ On **any model**, track the current project direction:
   Todo/title-only link for human confirmation; it never adopts an epic from title alone. It never
   writes to bd, and `/specify` remains unchanged.
 
-On a **frontier model** (Opus / Fable / Mythos / `gpt-5.6-sol` / Qwen3.8-Max-class / Kimi-K3-class)
+On a **frontier model** (Opus / Fable / Mythos / `gpt-5.6-sol` / `qwen3.7-max` / Qwen3.8-Max-class /
+Kimi-K3-class)
 — author the *what*:
 
 - **`/specify <description>`** → one **story** (a precise, verifiable contract), or a big goal decomposed
@@ -390,7 +391,8 @@ On a **frontier model** (Opus / Fable / Mythos / `gpt-5.6-sol` / Qwen3.8-Max-cla
   refreshes local project memory and proposes exact-title links. Every mode requires frontier.
 
 On **any rung** — budget (Haiku / Gemini Flash / MiniMax-M3 / Kimi-K2-class incl. `kimi-for-coding`),
-medium (Sonnet / `gpt-5.5` / `gpt-5.6-terra` / Gemini Pro-class), or frontier — do the *how*, on
+medium (Sonnet / `gpt-5.5` / `gpt-5.6-terra` / `glm-5.2` / `qwen3.7-plus` / `deepseek-v4-pro` /
+Gemini Pro-class), or frontier — do the *how*, on
 whatever rung the story's own complexity call asks for:
 
 - **`/solve <id>`** → refuses if the story is blocked; otherwise claims it, works test-first in its

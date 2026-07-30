@@ -1,7 +1,7 @@
 ---
 name: orchestrate
 description: "Automate /solve -> review -> land across an ordered set of bd stories and/or epics, with one integration branch and one final GitHub PR or GitLab MR. Frontier model only. Epics expand to their story children; input order controls serial scheduling, --parallel dispatches a ready wave, and --finalize closes each live-complete selected epic after the merged PR/MR then syncs .milestone.md."
-version: 1.8.0
+version: 1.8.1
 argument-hint: '<id> [<id> ...] [--dry-run] [--parallel] [--finalize]'
 disable-model-invocation: false
 user-invocable: true
@@ -35,10 +35,13 @@ hold, and the markers are how you recognize it.
 
 | Rung | What it holds | ID markers |
 |---|---|---|
-| `budget` | Bounded, fully-specified work. Thin reasoning, small effective attention — drifts as ambiguity or scope grows. | `haiku` `flash` `mini` `lite` `small` `nano` `luna` `kimi-k2` `kimi-for-coding`; MiniMax-M / Gemini Flash class |
-| `medium` | One real difficulty signal, contained to a single well-understood area. Larger working set; not for high-blast-radius subtlety. | `sonnet` `gpt-5.5` `gpt-5.6-terra`; Gemini Pro class |
-| `frontier` | Work where being subtly wrong is expensive, or the correct approach itself takes judgment. | `opus` `fable` `mythos` `gpt-5.6-sol` `k3`; Qwen3.8-Max / Kimi-K3 class, or equivalent top tier |
+| `budget` | Bounded, fully-specified work. Thin reasoning, small effective attention — drifts as ambiguity or scope grows. | `haiku` `*-flash` `*-mini` `*-lite` `small` `nano` `luna` `kimi-k2` `kimi-for-coding`; MiniMax-M / Gemini Flash class |
+| `medium` | One real difficulty signal, contained to a single well-understood area. Larger working set; not for high-blast-radius subtlety. | `sonnet` `gpt-5.5` `gpt-5.6-terra` `glm-5.2` `qwen3.7-plus` `deepseek-v4-pro`; Gemini Pro class |
+| `frontier` | Work where being subtly wrong is expensive, or the correct approach itself takes judgment. | `opus` `fable` `mythos` `gpt-5.6-sol` `k3` `qwen3.7-max`; Qwen3.8-Max / Kimi-K3 class, or equivalent top tier |
 | `unsure` | Anything not positively placed above. | — |
+
+A plain marker matches anywhere in the ID; a `*-` marker matches only as a hyphen-delimited
+suffix segment, so `gpt-5-mini` is budget and `minimax-m3` is not matched by `*-mini`.
 
 **A budget marker outranks any higher one** — `qwen3.8-max-lite` is budget, not frontier. Unsure
 between medium and frontier → **medium**; for a gated skill that means stopping, which is the safe

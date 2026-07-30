@@ -1,7 +1,7 @@
 ---
 name: validate
 description: 'Human review gate for a needs-review story by id: runs a review pass at effort high via a rung-pinned reviewer subagent that applies fixes in place on bd/<id>, then enacts your verdict — approve (land it on the branch it was forked from, close, unblock dependents), another pass, or a wrong contract routed to /refine. --approve lands with no review pass; --review [effort] picks a different effort; --note <text> steers the review or annotates the story. --unattended is for /orchestrate landing onto a provisional run branch — never for a human approving straight to master/main.'
-version: 1.18.1
+version: 1.18.2
 argument-hint: '[<story-id>] [--approve [--unattended]] [--review [effort] [--unattended]] [--note <text>]'
 disable-model-invocation: false
 user-invocable: true
@@ -28,10 +28,13 @@ hold, and the markers are how you recognize it.
 
 | Rung | What it holds | ID markers |
 |---|---|---|
-| `budget` | Bounded, fully-specified work. Thin reasoning, small effective attention — drifts as ambiguity or scope grows. | `haiku` `flash` `mini` `lite` `small` `nano` `luna` `kimi-k2` `kimi-for-coding`; MiniMax-M / Gemini Flash class |
-| `medium` | One real difficulty signal, contained to a single well-understood area. Larger working set; not for high-blast-radius subtlety. | `sonnet` `gpt-5.5` `gpt-5.6-terra`; Gemini Pro class |
-| `frontier` | Work where being subtly wrong is expensive, or the correct approach itself takes judgment. | `opus` `fable` `mythos` `gpt-5.6-sol` `k3`; Qwen3.8-Max / Kimi-K3 class, or equivalent top tier |
+| `budget` | Bounded, fully-specified work. Thin reasoning, small effective attention — drifts as ambiguity or scope grows. | `haiku` `*-flash` `*-mini` `*-lite` `small` `nano` `luna` `kimi-k2` `kimi-for-coding`; MiniMax-M / Gemini Flash class |
+| `medium` | One real difficulty signal, contained to a single well-understood area. Larger working set; not for high-blast-radius subtlety. | `sonnet` `gpt-5.5` `gpt-5.6-terra` `glm-5.2` `qwen3.7-plus` `deepseek-v4-pro`; Gemini Pro class |
+| `frontier` | Work where being subtly wrong is expensive, or the correct approach itself takes judgment. | `opus` `fable` `mythos` `gpt-5.6-sol` `k3` `qwen3.7-max`; Qwen3.8-Max / Kimi-K3 class, or equivalent top tier |
 | `unsure` | Anything not positively placed above. | — |
+
+A plain marker matches anywhere in the ID; a `*-` marker matches only as a hyphen-delimited
+suffix segment, so `gpt-5-mini` is budget and `minimax-m3` is not matched by `*-mini`.
 
 **A budget marker outranks any higher one** — `qwen3.8-max-lite` is budget, not frontier. Unsure
 between medium and frontier → **medium**; for a gated skill that means stopping, which is the safe

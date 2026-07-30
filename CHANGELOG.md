@@ -11,6 +11,18 @@ shipped at the time — `case-solvers` — and are left as written.
 
 ## [Unreleased]
 
+**Tier map: new medium and frontier IDs, and segment-anchored budget suffixes.**
+`shared/model-tiers.md` adds `glm-5.2`, `qwen3.7-plus`, and `deepseek-v4-pro` to **medium** and
+`qwen3.7-max` to **frontier**, so those sessions classify instead of landing in `unsure` — they solve
+and review at their rung, and the frontier one also clears the `/specify`, `/refine`, `/orchestrate`
+gate. The bare budget markers `flash`, `mini`, and `lite` become `*-flash`, `*-mini`, `*-lite`,
+matching only as a hyphen-delimited suffix segment, so `gpt-5-mini` stays budget while an ID that
+merely contains the letters (`minimax-m3`) is no longer swept in by that marker. Budget markers still
+outrank higher ones, so `qwen3.8-max-lite` remains budget. Synced into all five skills by
+`tests/model-tiers-sync.sh --write`: `/specify` `2.14.1`, `/refine` `1.13.1`, `/orchestrate` `1.8.1`,
+`/solve` `1.10.2`, `/validate` `1.18.2`. `sdd` `3.4.0` -> `3.4.1` in both plugin manifests and both
+marketplaces; the Kimi bundle also moves to `3.4.1`.
+
 **Multi-target `/orchestrate` (`1.8.0`).** `/orchestrate` now accepts an ordered mix of story and
 epic ids. Epics expand to their direct stories, duplicate stories run once, input order controls
 serial priority while readiness still wins, and every selection uses one deterministic

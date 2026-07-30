@@ -7,7 +7,7 @@
       "name": "sdd",
       "source": "./plugins/sdd",
       "description": "A spec-driven workflow: /milestone keeps local-only project direction and optionally syncs epic progress read-only from Beads; /specify authors stories/epics, /refine revises a story, /board shows the backlog, /solve implements one in an isolated worktree, /validate merges after human review, and /orchestrate runs ordered story/epic targets behind one GitHub PR or GitLab MR with explicit post-merge --finalize for complete epics. Requires bd for the story workflow and milestone sync.",
-      "version": "3.4.0",
+      "version": "3.4.1",
       "author": { "name": "nadiar", "email": "codex@nadiar.id" },
       "license": "MIT",
       "category": "workflow",
