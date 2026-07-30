@@ -120,8 +120,8 @@ Four things make this host different, none of them a reason to fork skill prose:
 `.claude-plugin/marketplace.json` (Claude Code) and `.agents/plugins/marketplace.json` (Codex)
 publish the same three plugins under `plugins/`:
 
-- **sdd** — `/specify`, `/refine`, `/board`, `/solve`, `/validate`, `/orchestrate`: a
-  bd-backed, parallel-capable coding workflow.
+- **sdd** — `/milestone`, `/specify`, `/refine`, `/board`, `/solve`, `/validate`, `/orchestrate`:
+  lightweight `.milestone.md` project memory plus a bd-backed, parallel-capable coding workflow.
 - **code-review-quality** — `/code-review-quality`: multi-axis review of a change before merge.
   Standalone — no bd, no worktrees, no model gate. Report-only by default; `--fix true` applies the
   findings and leaves them uncommitted. Deliberately *not* an `sdd` skill: it shares none of that
@@ -146,7 +146,8 @@ publish the same three plugins under `plugins/`:
   in place on `bd/<id>` and amends — `/validate` carries no model gate, so the reviewer's model is
   pinned explicitly, never below `medium`, rather than inherited. Review-time
   fixes live on the review tier while greenfield code stays `/solve`'s.
-  `/board` stands outside the tiers — a read-only render of
+  `/milestone` and `/board` stand outside the tiers — milestone is lightweight file-backed project
+  memory with an explicit read-only bd sync, and board is a read-only render of
   the backlog (or one story), no model gate. A skill recognizes its own rung from its system prompt
   — by **model-ID substring**, not host, so each rung spans all three hosts
   (Opus/Fable frontier and Sonnet medium on Claude, `gpt-5.6-sol` vs `gpt-5.6-terra` on Codex,
@@ -173,9 +174,11 @@ publish the same three plugins under `plugins/`:
 - **Invocation tracks blast radius, not read/write.** `/solve` (writes code) and `/validate`
   (merges + closes) are slash-only (`allow_implicit_invocation: false` in Codex agent metadata), so
   they never auto-fire mid-conversation. The rest are model-invocable so plain-English asks route to
-  them: `/board` (read-only), `/refine` (names an id), `/specify` (authors a new story/epic — a
-  plain-English ask like "let's put our problem to a case" should reach it), and `/orchestrate`
-  (drives an epic). `/code-review-quality` is model-invocable too — report-only is its default, and
+  them: `/milestone` (one project-memory file; `--sync` only reads bd), `/board` (read-only),
+  `/refine` (names an id),
+  `/specify` (authors a new story/epic — a plain-English ask like "let's put our problem to a case"
+  should reach it), and `/orchestrate` (drives an epic). `/code-review-quality` is model-invocable
+  too — report-only is its default, and
   the one path that edits files (`--fix true`) is honored **only when the caller typed the flag**, so
   an implicit invocation can never reach it; that typed-flag rule is what keeps the blast radius of an
   auto-fire at zero, not the flag's default. `/specify` and `/refine` write to bd but are backstopped the same way: the
@@ -186,7 +189,9 @@ publish the same three plugins under `plugins/`:
   of that agent metadata is the at-a-glance marker of a slash-only skill.
 - **bd is the engine, not the interface.** bd (Beads) is the durable issue store, but the
   plugin's end user never types a `bd` command and never sees raw bd output — skills translate
-  to/from bd and render human-friendly. Keep bd hidden when editing skill prose. (This is the
+  to/from bd and render human-friendly. `/milestone --sync` reads it only to reconcile the file's
+  linked epic progress and unmatched Todo; it never authors bd records. Keep bd hidden when editing
+  skill prose. (This is the
   *opposite* of how you, the agent working on this repo, track your own tasks — see below.)
 - **Story = WHAT, solver = HOW.** A story states a testable, unambiguous outcome — never the
   mechanism. "Specific ≠ prescriptive."

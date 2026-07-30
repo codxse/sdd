@@ -1,7 +1,7 @@
 {
   "name": "sdd",
-  "version": "3.2.0+codex.20260730063029",
-  "description": "A bd-backed, parallel-capable coding workflow: /specify (frontier model) authors stories/epics in Beads and /refine revises them, /board renders the backlog, /solve (any model tier) implements one in an isolated git worktree, /validate merges it after human review, /orchestrate (frontier model) automates the solve-review-land loop for a whole epic behind one final PR. Dependency-aware; bd stays hidden behind the commands. Requires the bd (Beads) CLI.",
+  "version": "3.3.0+codex.20260730021745",
+  "description": "A spec-driven workflow with lightweight milestone memory: /milestone clarifies the intended outcome, tracks work not yet represented by an epic, and optionally syncs progress read-only from Beads; /specify authors stories/epics, /refine revises them, /board renders the backlog, /solve implements one in an isolated worktree, /validate merges after human review, and /orchestrate automates a whole epic behind one final PR. Requires the bd CLI for the story workflow and milestone sync.",
   "author": {
     "name": "nadiar",
     "email": "codex@nadiar.id"
@@ -12,6 +12,7 @@
   "keywords": [
     "workflow",
     "planning",
+    "milestone",
     "architect",
     "specify",
     "refine",
@@ -27,10 +28,11 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "SDD",
-    "shortDescription": "A bd-backed, parallel-capable coding workflow: author, refine, solve, validate, and orchestrate stories.",
-    "longDescription": "Manage a Beads-backed engineering workflow from story authoring through isolated implementation, human-reviewed merge, and whole-epic orchestration behind a single final PR.",
+    "shortDescription": "Track a milestone, then author, solve, validate, and orchestrate stories.",
+    "longDescription": "Clarify and keep the current milestone in .milestone.md, including work not yet represented in Beads, optionally sync epic progress read-only, then manage the engineering workflow from story authoring through isolated implementation, human-reviewed merge, and whole-epic orchestration behind a single final PR.",
     "defaultPrompt": "Show the SDD board and help me choose the next appropriate workflow action.",
     "capabilities": [
+      "Milestone tracking",
       "Story authoring",
       "Backlog viewing",
       "Isolated implementation",

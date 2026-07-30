@@ -1,13 +1,14 @@
 {
   "name": "sdd",
-  "version": "3.2.0",
-  "description": "A bd-backed, parallel-capable coding workflow: /specify (frontier model) authors stories/epics in Beads and /refine revises them, /board renders the backlog, /solve (any tier) implements one in an isolated git worktree, /validate merges it after human review, /orchestrate (frontier model) automates the solve-review-land loop for a whole epic behind one final PR. Also ships code-review-quality for multi-axis review of a change before merge, and writing-claude-md for lean project context files. Requires the bd (Beads) CLI.",
+  "version": "3.3.0",
+  "description": "A spec-driven workflow with lightweight milestone memory: /milestone clarifies the intended outcome, tracks Todo not yet represented by epics, and optionally syncs progress read-only from Beads; /specify authors stories/epics, /refine revises them, /board renders the backlog, /solve implements one in an isolated worktree, /validate merges after human review, and /orchestrate automates a whole epic behind one final PR. Also ships code-review-quality and writing-claude-md.",
   "author": "nadiar <codex@nadiar.id>",
   "homepage": "https://github.com/codxse/sdd",
   "license": "MIT",
   "keywords": [
     "workflow",
     "planning",
+    "milestone",
     "architect",
     "specify",
     "refine",
@@ -43,8 +44,8 @@
   ],
   "interface": {
     "displayName": "SDD",
-    "shortDescription": "A bd-backed, parallel-capable coding workflow: author, refine, solve, validate, and orchestrate stories.",
-    "longDescription": "Manage a Beads-backed engineering workflow from story authoring through isolated implementation, human-reviewed merge, and whole-epic orchestration behind a single final PR. Ships all three marketplace plugins (sdd, code-review-quality and writing-claude-md) as one Kimi plugin, because Kimi's GitHub install reads the manifest at the repository root.",
+    "shortDescription": "Track a milestone, then author, solve, validate, and orchestrate stories.",
+    "longDescription": "Clarify and keep the current milestone in .milestone.md, including Todo not yet represented by epics, optionally sync epic progress read-only from Beads, then manage the engineering workflow from story authoring through isolated implementation, human-reviewed merge, and whole-epic orchestration behind a single final PR. Ships all three marketplace plugins as one Kimi plugin.",
     "developerName": "nadiar",
     "websiteURL": "https://github.com/codxse/sdd"
   }

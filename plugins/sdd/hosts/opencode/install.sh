@@ -11,7 +11,7 @@
 # nothing stale behind.
 #
 # Four things get installed, each independently skippable:
-#   skill/    all eight SKILL.md files, from every plugin in this repo
+#   skill/    all nine SKILL.md files, from every plugin in this repo
 #   agent/    opencode-native reviewer agents for /validate's review pass
 #   plugin/   sdd-model-context.js, which tells the session its own model ID
 #   command/  one slash command per skill, generated from the skill's own frontmatter

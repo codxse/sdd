@@ -11,6 +11,29 @@ shipped at the time — `case-solvers` — and are left as written.
 
 ## [Unreleased]
 
+**New sdd skill: `/milestone` (`1.1.0`).** One lightweight project-memory file,
+`.milestone.md`, records the current milestone's outcome, milestone-level Done When conditions,
+Todo capabilities not yet represented in bd, current epic, and epic checklist. `/milestone` with no
+argument shows it; a description starts a concise Socratic loop that clarifies what outcome the human
+really wants, observable completion conditions, and broad candidate capabilities without asking for
+architecture, APIs, files, story AC, estimates, or task order. Natural-language updates edit it in
+the main checkout. It has no model gate.
+
+`/milestone --sync` is the optional bridge to bd. It reads all epics and linked children in read-only
+mode, refreshes exact-id epic titles/status/story progress, checks bd-closed epics without unchecking
+a human-completed open one, and uses exact title matching only to propose a Todo/title-only link for
+human confirmation. It ignores unrelated epics, reports stale or ambiguous references, and never
+infers Done When or milestone completion from bd.
+
+The boundary is intentional: `/milestone` never creates or edits stories or epics, never writes to
+`.beads/`, and does not change `/specify`. Epic tracking stays explicit, with sync reconciling state
+rather than authoring it. Replacing an active milestone requires confirmation; ordinary updates
+preserve fields and epics the user did not mention.
+
+`sdd` `3.2.0` -> `3.3.0` in both plugin manifests and both marketplaces; the Kimi bundle also moves
+to `3.3.0`. The shared skill tree makes `/milestone` available on Claude Code, Codex, Kimi Code, and
+opencode; the opencode installer discovers it and generates `/milestone` without a host-specific copy.
+
 **opencode reviewer agents now pin reasoning effort.** `story-reviewer-strong` carries
 `variant: high`, `story-reviewer` carries `variant: medium`. On opencode, `variant` — not `effort` — is
 the reasoning-effort control; the `effort:` field the other hosts read is accepted by opencode's agent

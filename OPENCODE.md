@@ -38,7 +38,7 @@ Verify with `opencode` in a session: the skills appear in the `skill` tool's lis
 
 | Path under the config dir | What it is |
 |---|---|
-| `skill/<name>/SKILL.md` | All eight skills, from every plugin in the repo — `specify`, `refine`, `board`, `solve`, `validate`, `orchestrate`, `code-review-quality`, `writing-claude-md` |
+| `skill/<name>/SKILL.md` | All nine skills, from every plugin in the repo — `milestone`, `specify`, `refine`, `board`, `solve`, `validate`, `orchestrate`, `code-review-quality`, `writing-claude-md` |
 | `command/<name>.md` | One slash command per skill, so `/specify` works and not just "use the specify skill" |
 | `agent/story-reviewer{,-strong}.md` | The two review-and-apply subagents `/validate` spawns |
 | `plugin/sdd-model-context.js` | Tells the session its own model ID (see [Model identity](#model-identity-required)) |
@@ -160,7 +160,8 @@ conversationally — models hedge that question ("I can't verify my own model ID
 present, which tells you nothing.
 
 **Gating**, for reference: `/specify`, `/refine`, and `/orchestrate` require a frontier model.
-`/solve`, `/board`, `/validate`, and `/code-review-quality` run on any tier.
+`/milestone` (including its read-only `--sync`), `/solve`, `/board`, `/validate`, and
+`/code-review-quality` run on any tier.
 
 ---
 
@@ -296,8 +297,9 @@ because the workarounds would be worse than the gaps:
 
 ## Requirements
 
-The `bd` ([Beads](https://github.com/steveyegge/beads)) CLI on your `PATH` for the `sdd` skills.
-`/orchestrate` additionally needs `gh`, authenticated, for its final PR. `code-review-quality` needs
-only `git`, plus `gh` if you point it at a PR number. `writing-claude-md` has no dependencies.
+`/milestone` create/show/update needs only git. `/milestone --sync` and the story/epic workflow need
+the `bd` ([Beads](https://github.com/steveyegge/beads)) CLI on your `PATH`. `/orchestrate`
+additionally needs `gh`, authenticated, for its final PR. `code-review-quality` needs only `git`, plus
+`gh` if you point it at a PR number. `writing-claude-md` has no dependencies.
 
 For what the commands actually do, see the [README](README.md).

@@ -1,5 +1,6 @@
 ## SDD workflow — reach for these instead of ad-hoc bd/git
 
+- `/milestone [--sync|<description|update>]` — clarify and maintain the current project milestone in `.milestone.md`; `--sync` reconciles epic progress and work not yet represented in bd. Never writes to bd or changes `/specify`.
 - `/specify <description>` — author a NEW story or epic from a problem/goal not yet in bd. Frontier-tier only.
 - `/refine <story-id>` — revise an EXISTING story's contract (e.g. labelled needs-refinement). Frontier-tier only, WHAT-only, never touches code.
 - `/solve [<story-id>]` — implement one ready story in an isolated worktree+branch, ending at needs-review. Any tier — matched to the story's complexity call.

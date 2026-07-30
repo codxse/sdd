@@ -5,7 +5,7 @@
 
 | Plugin | Skills | Purpose |
 |--------|--------|---------|
-| `sdd` | `/specify`, `/refine`, `/board`, `/solve`, `/validate`, `/orchestrate` | bd-backed, parallel coding workflow: author stories/epics → solve in worktrees → review & merge, or automate a whole epic behind one PR |
+| `sdd` | `/milestone`, `/specify`, `/refine`, `/board`, `/solve`, `/validate`, `/orchestrate` | Socratic milestone memory with optional bd sync, plus a parallel workflow: author stories/epics → solve in worktrees → review & merge, or automate a whole epic behind one PR |
 | `code-review-quality` | `/code-review-quality` | Multi-axis review of a change before merge — severity-labelled findings and a verdict, optionally applied in place |
 | `writing-claude-md` | `/writing-claude-md` | Write lean, high-signal CLAUDE.md / AGENTS.md context files |
 
@@ -105,7 +105,7 @@ These run in your shell, not in a Codex session, and need a Codex CLI new enough
 subcommand — check with `codex plugin --help`. Verify the install with `codex plugin list`.
 
 On Codex, `/solve` and `/validate` are **slash-only** — they bake work into a branch, so they never
-auto-fire mid-conversation. `/specify`, `/refine`, `/board`, `/orchestrate`, and
+auto-fire mid-conversation. `/milestone`, `/specify`, `/refine`, `/board`, `/orchestrate`, and
 `/code-review-quality` also answer plain English (for example, "run the epic", "show the board", or
 "review my changes"). Invoke any plugin skill explicitly with its qualified name, such as
 `$sdd:orchestrate <epic-id>`.
@@ -119,7 +119,7 @@ auto-fire mid-conversation. `/specify`, `/refine`, `/board`, `/orchestrate`, and
 Type it in a Kimi Code session (not your shell), then run `/reload` (or `/new`) — plugin changes
 don't apply to the current session. Kimi's GitHub install reads the manifest at the repository
 root, so all three marketplace plugins ship as **one** Kimi plugin named `sdd` carrying all
-eight skills; there is no per-plugin pick on this host. Verify with `/plugins list`, or open the
+nine skills; there is no per-plugin pick on this host. Verify with `/plugins list`, or open the
 manager with `/plugins`.
 
 Invoke the skills as `/skill:specify`, `/skill:solve`, …, or in plain English — Kimi doesn't register
@@ -156,10 +156,11 @@ provider. **[OPENCODE.md](OPENCODE.md) covers all of it** — install, update, u
 subagents, keeping a provider key out of the config with `{env:VAR}`, the no-copy setup for working on
 this repo, and how to test the guard in both directions.
 
-**Requirements:** the `bd` CLI on your `PATH` for `sdd` — see
-[the command reference below](#sdd--bd-backed-parallel-coding-workflow). `/orchestrate`
-additionally needs the `gh` CLI, authenticated, for opening its final PR. `code-review-quality` needs
-only `git`, plus `gh` if you point it at a PR number. `writing-claude-md` has no dependencies.
+**Requirements:** `/milestone` create/show/update needs only git; `/milestone --sync` and the rest of
+the `sdd` workflow need the `bd` CLI on your `PATH` — see
+[the command reference below](#sdd--bd-backed-parallel-coding-workflow). `/orchestrate` additionally
+needs the `gh` CLI, authenticated, for opening its final PR. `code-review-quality` needs only `git`,
+plus `gh` if you point it at a PR number. `writing-claude-md` has no dependencies.
 
 **Reviewer agents (recommended):** the plugin ships two review-and-apply agent definitions —
 `story-reviewer` (medium rung) and `story-reviewer-strong` (frontier rung) — that `/validate`
@@ -216,8 +217,9 @@ budget model to save on `/solve` and the reviewer runs on that budget model too,
 failure the frontier pin exists to prevent. Leave it unset and `/validate` falls back to pinning the
 reviewer to the session's own model ID (the custom-host branch of the Reviewer-pinning map).
 
-**Gating:** `/specify`, `/refine`, and `/orchestrate` require a **frontier model**; `/solve`,
-`/board`, `/validate`, and `/code-review-quality` run on any tier. Each gated skill checks its own
+**Gating:** `/specify`, `/refine`, and `/orchestrate` require a **frontier model**; `/milestone`,
+`/solve`, `/board`, `/validate`, and `/code-review-quality` run on any tier. Each gated skill checks
+its own
 model ID and stops with a message telling you to switch, so a wrong tier costs you a line of output,
 never a bad story.
 
@@ -317,15 +319,17 @@ marketplace entry keeps resolving, but it will keep serving you the old plugin i
 
 ## `sdd` — bd-backed, parallel coding workflow
 
-The [three roles](#why-i-built-this) as commands: the **architect** (`/specify`, `/refine`, `/orchestrate`), the
+The current milestone sits above the execution loop as lightweight project memory. The
+[three roles](#why-i-built-this) remain the **architect** (`/specify`, `/refine`, `/orchestrate`), the
 **solver** (`/solve`), and you, the **validator** (`/validate`). Work lives in
 [**bd** (Beads)](https://github.com/steveyegge/beads) — a git-backed, dependency-aware issue tracker
 — so you can stockpile many stories and solve any of them anytime, in parallel. **bd stays hidden**:
 you only ever type the slash commands, never `bd`.
 
-**Requirements:** the `bd` CLI on your `PATH` — `brew install beads` (or `npm i -g @beads/bd`, or
-`go install github.com/steveyegge/beads@latest`). The skills assume it's present and run `bd init` on
-first use.
+**Requirements:** milestone create/show/update needs only git. `/milestone --sync` and the
+story/epic workflow need the `bd` CLI on your `PATH` — `brew install beads` (or
+`npm i -g @beads/bd`, or `go install github.com/steveyegge/beads@latest`). The bd-backed skills run
+`bd init` on first authoring use.
 
 <details>
 <summary>To skip permission prompts, add this to <code>.claude/settings.json</code></summary>
@@ -353,6 +357,16 @@ skills never prompt for codebase exploration.
 
 ### The commands
 
+On **any model**, track the current project direction:
+
+- **`/milestone [--sync|<description|update>]`** -> creates, shows, or updates `.milestone.md` in the
+  main checkout. Creation uses a short Socratic loop to clarify the outcome and observable Done When
+  conditions without descending into implementation details. The file also keeps a Todo checklist
+  for milestone capabilities that do not have a bd epic yet. `--sync` reads bd to refresh linked epic
+  status/story progress. An exact unique title match proposes a Todo/title-only link for human
+  confirmation; it never adopts an epic from title alone. It never writes to bd, and `/specify`
+  remains unchanged.
+
 On a **frontier model** (Opus / Fable / Mythos / `gpt-5.6-sol` / Qwen3.8-Max-class / Kimi-K3-class)
 — author the *what*:
 
@@ -376,7 +390,7 @@ whatever rung the story's own complexity call asks for:
 - **`/solve <id>`** → refuses if the story is blocked; otherwise claims it, works test-first in its
   own git **worktree+branch**, and stops at *done · review*. Never merges.
 
-On **any model**:
+Also on **any model**:
 
 - **`/board`** → backlog, in progress, awaiting merge, blocked. `/board <id>` shows one story.
 - **`/validate [<id>]`** → runs a code-review pass over the branch (effort `high`) and applies its
@@ -387,7 +401,16 @@ On **any model**:
 
 ### Typical flow
 
-You're the scheduler; the loop is **author → solve → validate**, `/board` to look any time.
+You're the scheduler; the loop is **author → solve → validate**, `/board` to look any time. A
+milestone is optional project memory around that loop:
+
+```
+/milestone ship a public beta where customers can complete the primary workflow
+```
+
+After the clarification loop and your confirmation, this creates `.milestone.md`. `/specify` remains
+unchanged and does not read it automatically. Add resulting epics to the milestone yourself, or run
+`/milestone --sync` to propose a link when a Todo title exactly matches a bd epic title.
 
 ```
 /specify add a forgot-password reset email flow
@@ -414,11 +437,13 @@ Stored in **your working project** (not this repo):
 
 | What | Where | Purpose |
 |------|-------|---------|
+| Current milestone | `.milestone.md` | Outcome, Done When, unmatched Todo, and epic-progress memory. |
 | Stories / epics | `.beads/` (git-committed) | The durable backlog + dependency graph. |
 | Feedback / refine notes | bd comments on a story | Per-story review feedback (refine notes + your verdicts). |
 | Work under review | git worktrees on `bd/<id>` | Isolated branch per story awaiting `/validate`. |
 
-Read them via `/board` and `/board <id>` — you never need `bd` commands directly.
+Read the milestone via `/milestone`; read stories and epics via `/board` and `/board <id>`. You never
+need `bd` commands directly.
 
 ---
 

@@ -1,11 +1,11 @@
 {
   "name": "sdd",
-  "description": "Codex plugins by nadiar: a bd-backed workflow (/specify, /refine, /board, /solve, /validate, /orchestrate), a multi-axis code reviewer, and context-writing helpers. Shares one skills/ tree with the Claude Code build.",
+  "description": "Codex plugins by nadiar: a spec-driven workflow (/milestone, /specify, /refine, /board, /solve, /validate, /orchestrate), a multi-axis code reviewer, and context-writing helpers. Shares one skills/ tree with the Claude Code build.",
   "plugins": [
     {
       "name": "sdd",
       "source": { "source": "local", "path": "./plugins/sdd" },
-      "version": "3.2.0",
+      "version": "3.3.0",
       "policy": { "installation": "AVAILABLE", "authentication": "ON_USE" },
       "category": "Productivity"
     },
