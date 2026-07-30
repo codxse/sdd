@@ -1,6 +1,6 @@
 {
   "name": "sdd",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "A bd-backed, parallel-capable coding workflow: /specify (frontier model) authors stories/epics in Beads and /refine revises them, /board renders the backlog, /solve (any tier) implements one in an isolated git worktree, /validate merges it after human review, /orchestrate (frontier model) automates the solve-review-land loop for a whole epic behind one final PR. Also ships code-review-quality for multi-axis review of a change before merge, and writing-claude-md for lean project context files. Requires the bd (Beads) CLI.",
   "author": "nadiar <codex@nadiar.id>",
   "homepage": "https://github.com/codxse/sdd",

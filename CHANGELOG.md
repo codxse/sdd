@@ -9,6 +9,54 @@ Versions track the published plugin/marketplace, not the skills' internal frontm
 versions (shown in parentheses where relevant). Entries below `3.0.0` name the project as it
 shipped at the time — `case-solvers` — and are left as written.
 
+## [3.2.0] - 2026-07-30
+
+**New host: [opencode](https://opencode.ai).** All eight skills, both reviewer subagents, and the
+`/validate` review pass now run there. No skill prose changed — the `skills/` tree is shared verbatim,
+as with every other host, and `/validate`'s capability-keyed *Reviewer pinning by host* map already
+covered opencode without an edit.
+
+opencode is the first host with **no manifest to publish to**. Its extension surface is the config
+directory itself, so the port is a script — `plugins/sdd/hosts/opencode/install.sh` — which copies
+skills, agents, a generated slash command per skill, and one plugin into `~/.config/opencode`
+(`--dest` scopes it to a project's `.opencode`). It records what it wrote in `.sdd-installed` and
+clears that set first, so re-running it is the update and a renamed skill can't linger as a duplicate.
+`--dry-run` previews, `--uninstall` reverses. New home for host files that aren't manifests:
+`plugins/sdd/hosts/<host>/`, laid out to mirror its destination.
+
+Three things were needed to make the host work, all of them additive:
+
+- **`plugin/sdd-model-context.js`** — opencode's built-in system context is working directory, project
+  root, git flag, platform, and date; it never states the model ID. Without one, every gated skill
+  (`/specify`, `/refine`, `/orchestrate`) classifies `unsure` and stops on *any* model, frontier ones
+  included — the same gap Kimi Code had, and invisible to a refusal-only test for the same reason
+  (`unsure` refuses in `budget`'s words). The plugin appends the host-resolved ID via
+  `experimental.chat.system.transform`, whose input carries the resolved model, so unlike Kimi's hook
+  nothing is reconstructed from session records or argv — **and** to the loaded skill body via
+  `tool.execute.after` on the `skill` tool. That second seam is the one that makes the guard hold:
+  opencode delivers a skill as a tool result, so the tier rubric lands far from the system prompt, and
+  with the system-prompt injection alone `claude-haiku-4-5` was observed emitting
+  `model-guard: id=claude-opus-4-1 tier=frontier` — an invented ID — and authoring a story anyway. Fails
+  closed: no ID → no output → `unsure` → stop. Verified live across all three rungs (haiku budget,
+  sonnet-5 medium, opus-5 frontier) and both provider protocols.
+- **A third reviewer-agent format** (`hosts/opencode/agent/*.md`) — same bodies verbatim, host-native
+  pin fields only. The Claude format can't be reused here: opencode's agent loader hard-fails the whole
+  config on `tools: Read, Grep, …` (it wants a `Record<string, boolean>`) and splits `model:` on `/`, so
+  a bare `sonnet` resolves to nothing. opencode *does* honor the pin, so both rungs — `story-reviewer`
+  medium, `story-reviewer-strong` frontier — are enforced by the definitions rather than by prose, as on
+  Claude Code and unlike Kimi. Pins name Anthropic slugs; the installer warns when one isn't in
+  `opencode models`.
+- **`tests/opencode/model-guard.sh`** — the fourth guard harness, same two-direction protocol as the
+  others. It stages a throwaway config directory (the operator's `opencode.json` copied in, working tree
+  on top) instead of mutating `~/.config/opencode`, and invokes skills as
+  `opencode run --command <name>`, the same path a user takes through the generated command files.
+  `tests/lib.sh` gains one host-agnostic helper for it: `SDD_TEST_ENV`, an opt-in list of environment
+  variables to forward through `run_clean_env`, for hosts whose provider key is read from `{env:VAR}`.
+- **`OPENCODE.md`** — install, update, uninstall, configuring the reviewer subagents, the
+  `skills.paths` no-copy setup for working on this repo, and the two accepted host gaps: no per-skill
+  implicit-invocation gate (so `/solve` and `/validate` sit behind `permission.skill: "ask"`, as on
+  Kimi), and the `experimental.`-prefixed hook the model guard depends on.
+
 ## [3.1.0] - 2026-07-30
 
 **New plugin: `code-review-quality` (`1.0.0`) — `/code-review-quality`.** A standalone multi-axis

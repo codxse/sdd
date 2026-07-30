@@ -7,7 +7,7 @@
       "name": "sdd",
       "source": "./plugins/sdd",
       "description": "A bd-backed, parallel-capable workflow: /specify authors stories/epics in Beads, /refine revises a story, /board shows the backlog, /solve implements one in an isolated worktree, /validate merges after human review, /orchestrate automates the solve-review-land loop for a whole epic behind one final PR. Requires the bd (Beads) CLI.",
-      "version": "3.1.0",
+      "version": "3.2.0",
       "author": { "name": "nadiar", "email": "codex@nadiar.id" },
       "license": "MIT",
       "category": "workflow",

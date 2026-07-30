@@ -24,7 +24,7 @@ REPO_ROOT="$(cd "$PLUGIN_ROOT/../.." && pwd)"
 run_clean_env() {
   local test_path
   local env_args=()
-  test_path="$HOME/.local/bin:$HOME/.kimi-code/bin:/usr/local/bin:/usr/bin:/bin"
+  test_path="$HOME/.local/bin:$HOME/.kimi-code/bin:$HOME/.opencode/bin:/usr/local/bin:/usr/bin:/bin"
   env_args+=(
     HOME="$HOME"
     PATH="$test_path"
@@ -37,6 +37,15 @@ run_clean_env() {
   )
   [ -n "${CODEX_HOME:-}" ] && env_args+=(CODEX_HOME="$CODEX_HOME")
   [ -n "${CLAUDE_CONFIG_DIR:-}" ] && env_args+=(CLAUDE_CONFIG_DIR="$CLAUDE_CONFIG_DIR")
+  [ -n "${OPENCODE_CONFIG_DIR:-}" ] && env_args+=(OPENCODE_CONFIG_DIR="$OPENCODE_CONFIG_DIR")
+  # Opt-in forwarding for host setups whose model access needs a named variable —
+  # e.g. an API key a config file reads via `{env:VAR}`. Named explicitly by the
+  # operator (`SDD_TEST_ENV="FOO BAR"`) so the allowlist above stays the default and
+  # a guard slip still cannot sweep up unrelated credentials.
+  local extra
+  for extra in ${SDD_TEST_ENV:-}; do
+    [ -n "${!extra:-}" ] && env_args+=("$extra=${!extra}")
+  done
   env -i "${env_args[@]}" "$@"
 }
 

@@ -1,7 +1,7 @@
 # SDD
 
-**Spec-driven development** as three agent plugins for **Claude Code**, **OpenAI Codex**, and
-**Kimi Code** — same skills, any host.
+**Spec-driven development** as three agent plugins for **Claude Code**, **OpenAI Codex**,
+**Kimi Code**, and **opencode** — same skills, any host.
 
 | Plugin | Skills | Purpose |
 |--------|--------|---------|
@@ -77,8 +77,8 @@ solve many in parallel — but you never type a `bd` command. The skills keep it
 
 ## Install
 
-Same three plugins on Claude Code and Codex (one combined plugin on Kimi Code — see below). Add the
-marketplace once, then install what you want.
+Same three plugins on Claude Code and Codex (one combined plugin on Kimi Code, a copy-based install on
+opencode — see below). Add the marketplace once, then install what you want.
 
 **Claude Code**
 
@@ -134,6 +134,28 @@ implicit-invocation gate (no equivalent of Codex's `agents/openai.yaml`), so `/s
 definitions on this host — for `/validate`'s reviewer, see the copy step under *Reviewer agents*
 below.
 
+**opencode**
+
+```sh
+git clone https://github.com/codxse/sdd
+sdd/plugins/sdd/hosts/opencode/install.sh
+```
+
+Run it in your shell, then start a new opencode session. opencode has no plugin manager — its
+extension surface is the config directory itself, so the install copies the skills, the reviewer
+agents, a generated slash command per skill, and one small plugin into `~/.config/opencode`. Re-run the
+same script to update; `--dry-run` shows the file list first, `--dest` scopes it to a single project's
+`.opencode`.
+
+That plugin is not optional: opencode never states its own model ID, so without it the frontier-gated
+skills (`/specify`, `/refine`, `/orchestrate`) stop on every model, frontier ones included. Two host
+gaps to know: there is no per-skill implicit-invocation gate, so keep `/solve` and `/validate` behind
+`"permission": { "skill": { "solve": "ask", "validate": "ask" } }` in your `opencode.json`; and the
+reviewer agents' `model:` pins name Anthropic slugs, which you'll want to edit if you're on another
+provider. **[OPENCODE.md](OPENCODE.md) covers all of it** — install, update, uninstall, the reviewer
+subagents, keeping a provider key out of the config with `{env:VAR}`, the no-copy setup for working on
+this repo, and how to test the guard in both directions.
+
 **Requirements:** the `bd` CLI on your `PATH` for `sdd` — see
 [the command reference below](#sdd--bd-backed-parallel-coding-workflow). `/orchestrate`
 additionally needs the `gh` CLI, authenticated, for opening its final PR. `code-review-quality` needs
@@ -161,6 +183,13 @@ agents directory once:
 mkdir -p ~/.agents/agents
 cp ~/.kimi-code/plugins/managed/sdd/plugins/sdd/agents/*.md ~/.agents/agents/
 ```
+
+On **opencode** the installer copies opencode-native versions of both agents into
+`~/.config/opencode/agent/` for you, and this host *does* honor a subagent's `model:` pin — so both
+rungs are enforced by the definitions rather than by prose, as on Claude Code. The pins name Anthropic
+slugs; on another provider, edit the one `model:` line in each file to a slug from `opencode models`
+(the installer warns you when a pin isn't in the catalog). See
+[OPENCODE.md](OPENCODE.md#subagents--validates-reviewer).
 
 (If you set `KIMI_CODE_HOME`, the managed copy lives under it instead; re-copy after a plugin
 update.) With them, `/validate` spawns `story-reviewer` — the reviewer prompt and narrowed tools
@@ -224,6 +253,17 @@ and install each version into its own directory.
 ```
 /plugins install https://github.com/codxse/sdd
 ```
+
+**opencode** — pull the checkout and re-run the installer, then start a new session:
+
+```sh
+cd sdd && git pull
+plugins/sdd/hosts/opencode/install.sh
+```
+
+It removes the previous install's files before writing the new ones, so a renamed or dropped skill
+leaves nothing stale behind. Re-apply any edit you made to the reviewer `model:` pins — the update
+overwrites them. `--uninstall` removes everything it installed.
 
 ### Migrating from `case-solvers`
 

@@ -4,8 +4,8 @@ This repo ships agent **plugins**, not an application. The "source" is prompt fi
 there is no unit-test suite — verifying a change usually means reading the prompt and the
 `CHANGELOG.md`, then running the skill.
 
-**Three hosts, one `skills/` tree.** The skill bodies are shared verbatim between Claude Code,
-OpenAI Codex, and Kimi Code — the Claude Code and Codex plugin layouts mirror each other, so each
+**Four hosts, one `skills/` tree.** The skill bodies are shared verbatim between Claude Code,
+OpenAI Codex, Kimi Code, and opencode — the Claude Code and Codex plugin layouts mirror each other, so each
 plugin carries two manifests
 (`.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`) over the *same* `skills/<name>/SKILL.md`
 files, and the repo carries two marketplaces (`.claude-plugin/marketplace.json`,
@@ -32,7 +32,14 @@ trial must show the guard's `model-guard: id=<exact-id> tier=<tier>` line (`guar
 `tests/lib.sh`). Refusal-only assertions cannot fail — a host that never states its model ID
 classifies `unsure`, and `unsure` refuses in the same words as `budget` — which is exactly how
 Kimi's missing model identity went unnoticed. Claude uses Haiku and `/specify`; Codex uses `gpt-5.6-luna` plus
-explicit `$sdd:specify` mentions; Kimi uses `kimi-code/kimi-for-coding` plus `/skill:specify`.
+explicit `$sdd:specify` mentions; Kimi uses `kimi-code/kimi-for-coding` plus `/skill:specify`; opencode
+uses `anthropic/claude-haiku-4-5-20251001` plus `opencode run --command specify` (a bare `/specify` in
+the message is sent verbatim and never resolves), and **stages a throwaway config dir** rather than
+mutating `~/.config/opencode` — the operator's `opencode.json` copied in for provider access, the
+working tree layered on top. Because `run_clean_env` strips the environment, a host whose provider key
+comes from `{env:VAR}` must name it in `SDD_TEST_ENV` or every trial fails to authenticate and scores
+as inconclusive infra rather than the setup mistake it is; `tests/opencode/lib.sh` warns about that up
+front, since opencode substitutes an *empty string* for an unset `{env:}` var instead of erroring.
 Codex's generic base prompt names only GPT-5, so its default plugin hook reads the host-provided
 `model` field and injects the exact slug. The harnesses call the real model, so they're slow and
 probabilistic — run them when changing any Model Guard. All three run model CLIs through the shared minimal environment
@@ -65,6 +72,48 @@ one frontier rung, the session's own model (the Kimi branch in `skills/validate/
 *Reviewer pinning by host*) — and there
 is no implicit-invocation gate equivalent to Codex's `agents/openai.yaml`, so slash-only-ness on
 Kimi rests on skill prose.
+
+**opencode has no manifest at all — its install surface is the config directory.** There is no plugin
+manager to publish to, so the host port is a *script*: `plugins/sdd/hosts/opencode/install.sh` copies
+into `~/.config/opencode` (or `$OPENCODE_CONFIG_DIR`, or a project `.opencode`) — `skill/<name>/SKILL.md`,
+`agent/*.md`, `plugin/sdd-model-context.js`, and a generated `command/<name>.md` per skill. It records
+its file list in `.sdd-installed` and removes that set before rewriting, so re-running it is the
+update and a renamed skill can't linger as a duplicate. `plugins/sdd/hosts/<host>/` is the home for
+anything a host needs that isn't a manifest; the source layout deliberately mirrors the destination
+so the installer stays a copy. Details, including the flags, live in `OPENCODE.md` — the one host doc
+big enough not to fit in the README.
+Four things make this host different, none of them a reason to fork skill prose:
+- **Slash commands are generated, not committed.** The installer builds each `command/<name>.md` from
+  that skill's own frontmatter (copying the `description:` line *verbatim* — it is already a valid
+  single-line YAML scalar, and re-quoting it is how you break a description containing quotes). Don't
+  commit command files; a second copy of a description is a second thing to drift.
+- **Skill frontmatter is lenient, agent frontmatter is not.** opencode's skill loader requires only
+  `name` + `description` and ignores unknown keys, so `version`/`argument-hint`/`user-invocable` ride
+  along inert. Its *agent* loader is stricter and hard-fails the config: `tools` must be a
+  `Record<string, boolean>`, so the Claude format's comma-separated `tools: Read, Grep, …` throws, and
+  `model:` is split on `/`, so a bare `sonnet` yields an empty model ID. That's why
+  `hosts/opencode/agent/*.md` is a third agent format rather than a copy of the Claude `.md` — same
+  body verbatim, host-native pin fields only, exactly like the `.toml` pair.
+- **`plugin/sdd-model-context.js` is load-bearing, and injects at two seams.** opencode's built-in
+  system context is cwd, project root, git, platform, and date — no model ID, so every gated skill
+  classifies `unsure` and stops on *any* model. The plugin appends the host-resolved ID via
+  `experimental.chat.system.transform` (the only hook onto the system prompt; its input carries the
+  resolved model, so unlike Kimi's hook nothing is reconstructed from session files or argv) **and** via
+  `tool.execute.after` on the `skill` tool, onto the loaded skill body. The second is not duplication —
+  it is the fix. opencode delivers a skill as a *tool result*, so the tier rubric lands far from the
+  system prompt, and a budget model doesn't look back: with seam 1 alone and the right ID in the system
+  prompt, `claude-haiku-4-5` emitted `model-guard: id=claude-opus-4-1 tier=frontier` — a confabulated ID
+  — and authored a story. Don't "simplify" either seam away. Same fail-closed rule as Kimi's: no ID →
+  emit nothing → `unsure` → stop. Never read `model` from `opencode.json` instead — that's the session's
+  model only when the user didn't override it with `-m` or `/models`, and asserting it tells a budget
+  session it is frontier. Verified on a live host across all three rungs and both providers
+  (Anthropic-native and OpenAI-compatible); test both directions, since `unsure` refuses in `budget`'s
+  words.
+- **Reviewer pinning needs no new branch.** opencode honors a subagent's `model:` pin, so it lands in
+  the existing *native host* bucket of `skills/validate/SKILL.md`'s *Reviewer pinning by host* — both
+  rungs, cost-keyed, no skill edit. This is the capability-keyed map paying off; don't add a host name
+  to it. The one accepted gap is the Kimi one: no per-skill implicit-invocation gate, so `/solve` and
+  `/validate` rely on `permission.skill: ask` in the user's config plus their own prose.
 
 ## What this is
 
