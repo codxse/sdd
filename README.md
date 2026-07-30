@@ -1,11 +1,12 @@
 # SDD
 
-**Spec-driven development** as two agent plugins for **Claude Code**, **OpenAI Codex**, and
-**Kimi Code** — same skills, any host.
+**Spec-driven development** as three agent plugins for **Claude Code**, **OpenAI Codex**,
+**Kimi Code**, and **opencode** — same skills, any host.
 
 | Plugin | Skills | Purpose |
 |--------|--------|---------|
 | `sdd` | `/specify`, `/refine`, `/board`, `/solve`, `/validate`, `/orchestrate` | bd-backed, parallel coding workflow: author stories/epics → solve in worktrees → review & merge, or automate a whole epic behind one PR |
+| `code-review-quality` | `/code-review-quality` | Multi-axis review of a change before merge — severity-labelled findings and a verdict, optionally applied in place |
 | `writing-claude-md` | `/writing-claude-md` | Write lean, high-signal CLAUDE.md / AGENTS.md context files |
 
 ## Why I built this
@@ -76,14 +77,15 @@ solve many in parallel — but you never type a `bd` command. The skills keep it
 
 ## Install
 
-Same two plugins on Claude Code and Codex (one combined plugin on Kimi Code — see below). Add the
-marketplace once, then install what you want.
+Same three plugins on Claude Code and Codex (one combined plugin on Kimi Code, a copy-based install on
+opencode — see below). Add the marketplace once, then install what you want.
 
 **Claude Code**
 
 ```
 /plugin marketplace add codxse/sdd
 /plugin install sdd@sdd
+/plugin install code-review-quality@sdd
 /plugin install writing-claude-md@sdd
 ```
 
@@ -95,6 +97,7 @@ browser if you'd rather click. Verify with `/help` — the new commands appear i
 ```
 codex plugin marketplace add codxse/sdd
 codex plugin add sdd@sdd
+codex plugin add code-review-quality@sdd
 codex plugin add writing-claude-md@sdd
 ```
 
@@ -102,9 +105,10 @@ These run in your shell, not in a Codex session, and need a Codex CLI new enough
 subcommand — check with `codex plugin --help`. Verify the install with `codex plugin list`.
 
 On Codex, `/solve` and `/validate` are **slash-only** — they bake work into a branch, so they never
-auto-fire mid-conversation. `/specify`, `/refine`, `/board`, and `/orchestrate` also answer plain
-English (for example, "run the epic" or "show the board"). Invoke any plugin skill explicitly with
-its qualified name, such as `$sdd:orchestrate <epic-id>`.
+auto-fire mid-conversation. `/specify`, `/refine`, `/board`, `/orchestrate`, and
+`/code-review-quality` also answer plain English (for example, "run the epic", "show the board", or
+"review my changes"). Invoke any plugin skill explicitly with its qualified name, such as
+`$sdd:orchestrate <epic-id>`.
 
 **Kimi Code**
 
@@ -114,27 +118,55 @@ its qualified name, such as `$sdd:orchestrate <epic-id>`.
 
 Type it in a Kimi Code session (not your shell), then run `/reload` (or `/new`) — plugin changes
 don't apply to the current session. Kimi's GitHub install reads the manifest at the repository
-root, so both marketplace plugins ship as **one** Kimi plugin named `sdd` carrying all
-seven skills; there is no per-plugin pick on this host. Verify with `/plugins list`, or open the
+root, so all three marketplace plugins ship as **one** Kimi plugin named `sdd` carrying all
+eight skills; there is no per-plugin pick on this host. Verify with `/plugins list`, or open the
 manager with `/plugins`.
 
 Invoke the skills as `/skill:specify`, `/skill:solve`, …, or in plain English — Kimi doesn't register
 `/specify`-style slash commands for plugin skills. The session primer hook (`SessionStart` /
-`PreCompact`) is ported and active. One host gap to know: there is no per-skill
+`PreCompact`) is ported and active, alongside a Kimi-only `UserPromptSubmit` hook that tells the
+session its own model ID — Kimi states one nowhere a model can read it, and without it the
+frontier-gated skills (`/specify`, `/refine`, `/orchestrate`) either refuse on every model or guess
+their tier. It needs no setup, but it does need the session reloaded after install like everything
+else here. One host gap to know: there is no per-skill
 implicit-invocation gate (no equivalent of Codex's `agents/openai.yaml`), so `/solve` and
 `/validate` rely on their own prose to stay slash-only. Plugins also can't ship subagent
 definitions on this host — for `/validate`'s reviewer, see the copy step under *Reviewer agents*
 below.
 
+**opencode**
+
+```sh
+git clone https://github.com/codxse/sdd
+sdd/plugins/sdd/hosts/opencode/install.sh
+```
+
+Run it in your shell, then start a new opencode session. opencode has no plugin manager — its
+extension surface is the config directory itself, so the install copies the skills, the reviewer
+agents, a generated slash command per skill, and one small plugin into `~/.config/opencode`. Re-run the
+same script to update; `--dry-run` shows the file list first, `--dest` scopes it to a single project's
+`.opencode`.
+
+That plugin is not optional: opencode never states its own model ID, so without it the frontier-gated
+skills (`/specify`, `/refine`, `/orchestrate`) stop on every model, frontier ones included. Two host
+gaps to know: there is no per-skill implicit-invocation gate, so keep `/solve` and `/validate` behind
+`"permission": { "skill": { "solve": "ask", "validate": "ask" } }` in your `opencode.json`; and the
+reviewer agents' `model:` pins name Anthropic slugs, which you'll want to edit if you're on another
+provider. **[OPENCODE.md](OPENCODE.md) covers all of it** — install, update, uninstall, the reviewer
+subagents, keeping a provider key out of the config with `{env:VAR}`, the no-copy setup for working on
+this repo, and how to test the guard in both directions.
+
 **Requirements:** the `bd` CLI on your `PATH` for `sdd` — see
 [the command reference below](#sdd--bd-backed-parallel-coding-workflow). `/orchestrate`
-additionally needs the `gh` CLI, authenticated, for opening its final PR. `writing-claude-md` has no
-dependencies.
+additionally needs the `gh` CLI, authenticated, for opening its final PR. `code-review-quality` needs
+only `git`, plus `gh` if you point it at a PR number. `writing-claude-md` has no dependencies.
 
 **Reviewer agents (recommended):** the plugin ships two review-and-apply agent definitions —
 `story-reviewer` (medium rung) and `story-reviewer-strong` (frontier rung) — that `/validate`
 prefers when spawning its review pass, so the reviewer's model pin is enforced by the agent
-definition instead of prose. On **Claude Code** they load automatically with the plugin. On
+definition instead of prose. Both prefer `/code-review-quality` (above) as the reviewing command when
+that plugin is installed, and otherwise fall back to the host's own review-and-apply — a preference,
+not a dependency: `sdd` works standalone. On **Claude Code** they load automatically with the plugin. On
 **Codex**, plugins don't auto-load agents yet — copy the TOML templates into your project once:
 
 ```sh
@@ -151,6 +183,13 @@ agents directory once:
 mkdir -p ~/.agents/agents
 cp ~/.kimi-code/plugins/managed/sdd/plugins/sdd/agents/*.md ~/.agents/agents/
 ```
+
+On **opencode** the installer copies opencode-native versions of both agents into
+`~/.config/opencode/agent/` for you, and this host *does* honor a subagent's `model:` pin — so both
+rungs are enforced by the definitions rather than by prose, as on Claude Code. The pins name Anthropic
+slugs; on another provider, edit the one `model:` line in each file to a slug from `opencode models`
+(the installer warns you when a pin isn't in the catalog). See
+[OPENCODE.md](OPENCODE.md#subagents--validates-reviewer).
 
 (If you set `KIMI_CODE_HOME`, the managed copy lives under it instead; re-copy after a plugin
 update.) With them, `/validate` spawns `story-reviewer` — the reviewer prompt and narrowed tools
@@ -177,9 +216,10 @@ budget model to save on `/solve` and the reviewer runs on that budget model too,
 failure the frontier pin exists to prevent. Leave it unset and `/validate` falls back to pinning the
 reviewer to the session's own model ID (the custom-host branch of the Reviewer-pinning map).
 
-**Gating:** `/specify`, `/refine`, and `/orchestrate` require a **frontier model**; `/solve` runs on any
-tier. Each checks its own model ID and stops with a message telling you to switch, so a wrong tier
-costs you a line of output, never a bad story.
+**Gating:** `/specify`, `/refine`, and `/orchestrate` require a **frontier model**; `/solve`,
+`/board`, `/validate`, and `/code-review-quality` run on any tier. Each gated skill checks its own
+model ID and stops with a message telling you to switch, so a wrong tier costs you a line of output,
+never a bad story.
 
 ### Updating
 
@@ -196,9 +236,10 @@ codex plugin marketplace upgrade sdd
 codex plugin add sdd@sdd
 ```
 
-For the context-writing plugin, substitute its name in the second command:
+For the other plugins, substitute the name in the second command:
 
 ```sh
+codex plugin add code-review-quality@sdd
 codex plugin add writing-claude-md@sdd
 ```
 
@@ -212,6 +253,17 @@ and install each version into its own directory.
 ```
 /plugins install https://github.com/codxse/sdd
 ```
+
+**opencode** — pull the checkout and re-run the installer, then start a new session:
+
+```sh
+cd sdd && git pull
+plugins/sdd/hosts/opencode/install.sh
+```
+
+It removes the previous install's files before writing the new ones, so a renamed or dropped skill
+leaves nothing stale behind. Re-apply any edit you made to the reviewer `model:` pins — the update
+overwrites them. `--uninstall` removes everything it installed.
 
 ### Migrating from `case-solvers`
 
@@ -367,6 +419,44 @@ Stored in **your working project** (not this repo):
 | Work under review | git worktrees on `bd/<id>` | Isolated branch per story awaiting `/validate`. |
 
 Read them via `/board` and `/board <id>` — you never need `bd` commands directly.
+
+---
+
+## `code-review-quality` — Multi-axis review before merge
+
+A review that judges a change against **what it was supposed to do**, across five axes —
+correctness, readability, architecture, security, performance — and reports findings the author can
+act on: `Critical`, `Required`, `Consider`, `Nit`, `FYI`, plus a merge verdict. It approves what
+improves the health of the codebase; it does not gate on taste.
+
+Standalone: no bd, no worktrees, no branch conventions, and no model gate — it runs on **any tier**.
+
+### Usage
+
+```
+/code-review-quality                                  # the working diff
+/code-review-quality --effort max                     # deepest pass
+/code-review-quality my-branch --fix true             # review since a ref, apply the fixes
+/code-review-quality #124                             # a GitHub PR (needs gh)
+/code-review-quality src/billing/                     # specific files, whole content
+```
+
+| Argument | Effect |
+|---|---|
+| *(none)* | Uncommitted changes if any; else the branch vs its merge-base with the trunk; else the last commit |
+| `<commit>` / `<branch>` / `<tag>` | The change since that point |
+| `<path>` | Reviews those files as they stand, not a diff |
+| `#<n>` or a PR URL | The PR's diff and its stated intent (needs the `gh` CLI) |
+| `--effort <low\|high\|max>` | `low` = diff only, correctness + security. `high` (default) = all five axes, reads the changed files and their callers. `max` = also traces call sites, runs tests/lint if cheap, and reviews dependency and lockfile diffs |
+| `--fix <true\|false>` | Default `false` — report only. `true` applies the `Critical` and `Required` findings and **leaves them uncommitted** for you: never staged, committed, amended, or pushed |
+
+Under `--fix true` it fixes the finding and nothing else — no drive-by renames, and never by
+weakening a check (no deleted test, no widened type, no swallowed exception, no disabled lint rule).
+A finding it can't verify stays unfixed and says so. Orphaned code after a refactor is listed and
+**asked about**, never silently deleted.
+
+It also refuses to pretend: past ~1000 changed lines it tells you the review can't be honest in one
+pass and names the split it would make before going further.
 
 ---
 

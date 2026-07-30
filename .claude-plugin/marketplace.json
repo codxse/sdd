@@ -1,17 +1,27 @@
 {
   "name": "sdd",
-  "description": "Claude Code plugins by nadiar: workflow skills (/specify, /refine, /board, /solve, /validate, /orchestrate) and context-writing helpers.",
+  "description": "Claude Code plugins by nadiar: workflow skills (/specify, /refine, /board, /solve, /validate, /orchestrate), a multi-axis code reviewer, and context-writing helpers.",
   "owner": { "name": "nadiar", "email": "codex@nadiar.id" },
   "plugins": [
     {
       "name": "sdd",
       "source": "./plugins/sdd",
       "description": "A bd-backed, parallel-capable workflow: /specify authors stories/epics in Beads, /refine revises a story, /board shows the backlog, /solve implements one in an isolated worktree, /validate merges after human review, /orchestrate automates the solve-review-land loop for a whole epic behind one final PR. Requires the bd (Beads) CLI.",
-      "version": "3.0.0",
+      "version": "3.2.0",
       "author": { "name": "nadiar", "email": "codex@nadiar.id" },
       "license": "MIT",
       "category": "workflow",
       "keywords": ["workflow", "planning", "architect", "specify", "refine", "board", "solve", "validate", "beads", "bd", "epic", "parallel"]
+    },
+    {
+      "name": "code-review-quality",
+      "source": "./plugins/code-review-quality",
+      "description": "Multi-axis code review before merge — correctness, readability, architecture, security, performance — reported as severity-labelled findings and a verdict. Reviews the working diff by default, or a commit, branch, tag, path, or PR. --effort sets depth; --fix applies the fixes in place and leaves them uncommitted. Any model tier; no dependencies.",
+      "version": "1.0.0",
+      "author": { "name": "nadiar", "email": "codex@nadiar.id" },
+      "license": "MIT",
+      "category": "workflow",
+      "keywords": ["code-review", "review", "quality", "correctness", "security", "performance", "refactor", "diff", "pull-request"]
     },
     {
       "name": "writing-claude-md",

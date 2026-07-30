@@ -9,7 +9,133 @@ Versions track the published plugin/marketplace, not the skills' internal frontm
 versions (shown in parentheses where relevant). Entries below `3.0.0` name the project as it
 shipped at the time — `case-solvers` — and are left as written.
 
-## [Unreleased]
+## [3.2.0] - 2026-07-30
+
+**New host: [opencode](https://opencode.ai).** All eight skills, both reviewer subagents, and the
+`/validate` review pass now run there. No skill prose changed — the `skills/` tree is shared verbatim,
+as with every other host, and `/validate`'s capability-keyed *Reviewer pinning by host* map already
+covered opencode without an edit.
+
+opencode is the first host with **no manifest to publish to**. Its extension surface is the config
+directory itself, so the port is a script — `plugins/sdd/hosts/opencode/install.sh` — which copies
+skills, agents, a generated slash command per skill, and one plugin into `~/.config/opencode`
+(`--dest` scopes it to a project's `.opencode`). It records what it wrote in `.sdd-installed` and
+clears that set first, so re-running it is the update and a renamed skill can't linger as a duplicate.
+`--dry-run` previews, `--uninstall` reverses. New home for host files that aren't manifests:
+`plugins/sdd/hosts/<host>/`, laid out to mirror its destination.
+
+Three things were needed to make the host work, all of them additive:
+
+- **`plugin/sdd-model-context.js`** — opencode's built-in system context is working directory, project
+  root, git flag, platform, and date; it never states the model ID. Without one, every gated skill
+  (`/specify`, `/refine`, `/orchestrate`) classifies `unsure` and stops on *any* model, frontier ones
+  included — the same gap Kimi Code had, and invisible to a refusal-only test for the same reason
+  (`unsure` refuses in `budget`'s words). The plugin appends the host-resolved ID via
+  `experimental.chat.system.transform`, whose input carries the resolved model, so unlike Kimi's hook
+  nothing is reconstructed from session records or argv — **and** to the loaded skill body via
+  `tool.execute.after` on the `skill` tool. That second seam is the one that makes the guard hold:
+  opencode delivers a skill as a tool result, so the tier rubric lands far from the system prompt, and
+  with the system-prompt injection alone `claude-haiku-4-5` was observed emitting
+  `model-guard: id=claude-opus-4-1 tier=frontier` — an invented ID — and authoring a story anyway. Fails
+  closed: no ID → no output → `unsure` → stop. Verified live across all three rungs (haiku budget,
+  sonnet-5 medium, opus-5 frontier) and both provider protocols.
+- **A third reviewer-agent format** (`hosts/opencode/agent/*.md`) — same bodies verbatim, host-native
+  pin fields only. The Claude format can't be reused here: opencode's agent loader hard-fails the whole
+  config on `tools: Read, Grep, …` (it wants a `Record<string, boolean>`) and splits `model:` on `/`, so
+  a bare `sonnet` resolves to nothing. opencode *does* honor the pin, so both rungs — `story-reviewer`
+  medium, `story-reviewer-strong` frontier — are enforced by the definitions rather than by prose, as on
+  Claude Code and unlike Kimi. Pins name Anthropic slugs; the installer warns when one isn't in
+  `opencode models`.
+- **`tests/opencode/model-guard.sh`** — the fourth guard harness, same two-direction protocol as the
+  others. It stages a throwaway config directory (the operator's `opencode.json` copied in, working tree
+  on top) instead of mutating `~/.config/opencode`, and invokes skills as
+  `opencode run --command <name>`, the same path a user takes through the generated command files.
+  `tests/lib.sh` gains one host-agnostic helper for it: `SDD_TEST_ENV`, an opt-in list of environment
+  variables to forward through `run_clean_env`, for hosts whose provider key is read from `{env:VAR}`.
+- **`OPENCODE.md`** — install, update, uninstall, configuring the reviewer subagents, the
+  `skills.paths` no-copy setup for working on this repo, and the two accepted host gaps: no per-skill
+  implicit-invocation gate (so `/solve` and `/validate` sit behind `permission.skill: "ask"`, as on
+  Kimi), and the `experimental.`-prefixed hook the model guard depends on.
+
+## [3.1.0] - 2026-07-30
+
+**New plugin: `code-review-quality` (`1.0.0`) — `/code-review-quality`.** A standalone multi-axis
+review of a change before it merges: correctness, readability, architecture, security, performance,
+judged against *what the change was supposed to do* and reported as `Critical` / `Required` /
+`Consider` / `Nit` / `FYI` findings plus a merge verdict. Inspired by
+[addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)' `code-review-and-quality`;
+written fresh for this repo's voice and flag conventions.
+
+It is deliberately **not** an `sdd` skill. `sdd` is the bd-backed workflow — stories, worktrees,
+`bd/<id>` branches — and this reviewer shares none of that machinery: no bd, no worktrees, no branch
+naming, no `.beads/` guard. `sdd`'s own review path is unchanged (`/validate` → the host's
+`/code-review --fix` in a rung-pinned subagent); this plugin is for reviewing a change that was never
+a story.
+
+- **Default target is the working diff**, resolved by a stated ladder: uncommitted changes if any,
+  else the branch against its merge-base with the trunk, else the last commit. An argument overrides
+  it — a commit, branch, or tag (the change since that point), a path (those files as they stand), or
+  `#<n>` / a PR URL (via `gh`). The report header names which rung of the ladder was taken, so the
+  human always knows what was actually reviewed.
+- **`--effort <low|high|max>`, default `high`** — the same effort vocabulary `/validate` passes to
+  `/code-review`, so one word means one thing across the marketplace. `low` reads the diff alone
+  (correctness + security); `high` reads each changed file whole plus its callers; `max` also traces
+  call sites of changed signatures, runs tests/lint where the repo makes that cheap, and reviews
+  dependency and lockfile diffs package by package.
+- **`--fix <true|false>`, default `false`.** Report-only unless asked. Under `--fix true` it applies
+  the `Critical` and `Required` findings and **leaves them uncommitted** — never `git add`, commit,
+  amend, push, or branch; the human gets a `git diff` and a list of what was applied and what was
+  skipped. Three rules keep the fix pass honest: fix the finding and nothing else (no drive-by
+  renames or reformatting), never fix by weakening a check (no deleted or loosened test, no widened
+  type, no swallowed exception, no disabled lint rule), and a finding you can't verify stays unfixed
+  and says so. Orphaned code after a refactor is listed and **asked about**, never silently deleted.
+- **Model-invocable, and the write path can't be reached implicitly.** "Review my changes" should
+  route here, so the skill carries no `allow_implicit_invocation: false` gate. `--fix` is honored
+  **only when the caller typed it** — an implicit invocation is report-only no matter what, and offers
+  the fix pass instead of taking it. That typed-flag rule is the guardrail, not the flag's default.
+- **No model gate, and no tier vocabulary at all.** Runs on any tier like `/solve`, and unlike the
+  `sdd` skills it carries no `Model Tiers` block — nothing in it turns on a rung, so it is
+  deliberately outside `model-tiers-sync.sh` rather than holding a copy of another plugin's tier map.
+- **It refuses to pretend.** Past ~1000 changed lines it says the review can't be honest in one pass
+  and names the split it would make before going any further. Same spirit in the report: empty
+  severity sections are omitted, but the axes that came back clean are named — a review listing no
+  findings and no coverage is indistinguishable from no review. No `LGTM` without evidence.
+
+**`/validate`'s reviewers now prefer it — a preference, never a dependency** (`/validate` `1.17.1` →
+`1.18.0`). Both shipped reviewer agents (`story-reviewer`, `story-reviewer-strong`, all four
+`.md`/`.toml` files) now run `/code-review-quality <base>...bd/<id> --effort <effort> --fix true`
+where that plugin is installed, and fall back to the host's own review-and-apply (`/code-review
+<effort> --fix` on Claude Code, its equivalent elsewhere) where it isn't. `code-review-quality` ships
+as a separate plugin, so a missing install is explicitly *not* an error and never a reason to skip the
+review — `sdd` keeps working standalone.
+
+Two things fall out of that. `/validate` now hands the reviewer the **base branch `<base>`** along
+with the story id, worktree path, contract, effort, and note: the reviewer diffs `<base>...bd/<id>`
+and a story forked from a feature branch must not have its base guessed as `main`. And `/validate`'s
+prose stopped naming a command it no longer chooses — it says "the reviewer subagent" throughout, with
+the command named once in the agent definitions, so the two can't drift. `/solve`'s one mention of the
+review path follows suit.
+
+To match, `code-review-quality` accepts an explicit `<a>...<b>` range (no inference) and honors a
+caller-named checkout: given a worktree path it runs every git command with `-C <path>` and reviews
+*there*, never the current directory instead.
+
+**Version bookkeeping.** `sdd` `3.0.0` → `3.1.0` in its four manifests (the reviewer agents and
+`/validate` changed). The repo-root `kimi.plugin.json` also goes `3.0.0` → `3.1.0`, but for a second
+reason: on Kimi Code that one manifest versions the *whole bundle* — its GitHub install reads the
+repository root only, so all three plugins ship there as one plugin named `sdd`, now carrying eight
+skills. `writing-claude-md` unchanged at `1.1.0`. Both marketplaces gain a third entry; install with
+`/plugin install code-review-quality@sdd` (Claude Code) or `codex plugin add code-review-quality@sdd`
+(Codex). Requires only `git`, plus `gh` if you point it at a PR number.
+
+## [3.0.0] - 2026-07-30
+
+Marketplace and plugin renamed `case-solvers` → **`sdd`**, `2.25.1` → `3.0.0` across all five
+manifests. Commands renamed `/case` → `/specify` and `/evaluate` → `/validate`. Skills:
+`/specify` (`2.11.0` → `2.14.0`), `/refine` (`1.10.0` → `1.13.0`), `/validate` (`1.15.0` →
+`1.17.1`), `/solve` (`1.8.0` → `1.10.1`), `/orchestrate` (`1.6.0` → `1.7.2`), `/board` (`1.1.0` →
+`1.1.2`). `writing-claude-md` unchanged at `1.1.0`. See *Migrating from case-solvers* in the README —
+installed plugins must be reinstalled under `codxse/sdd`.
 
 **Added the Socratic loop — the authoring behavior the README already claimed.** The README said a
 frontier model's job was to *grill me* into a clear contract. Two problems: "grill me" says nothing
@@ -160,7 +286,7 @@ Skill versions: `/specify` (`2.11.0` → `2.12.0`, and `skills/case/` → `skill
 (`1.15.1` → `1.16.0`, `skills/evaluate/` → `skills/validate/`), `/refine` (`1.10.0` → `1.11.0`),
 `/solve` (`1.8.0` → `1.9.0`), `/orchestrate` (`1.6.0` → `1.7.0`), `/board` (`1.1.0` → `1.1.1`). The
 three `model-guard.sh` harnesses now assert the refusal on `frontier model` rather than
-`planning model`, and the Codex twin takes an `EXPECT_TIER` override so the guard can also be trialled
+`planning model`, and all three take `--below-tier budget|medium` so the guard can be trialled
 against a medium-rung model, not only a budget one.
 
 **It is breaking for installs, not for usage.** Plugin id, marketplace id, and the host cache paths
@@ -173,6 +299,68 @@ Plugin & marketplace entry `2.25.1` → `3.0.0`, in all five manifests. `writing
 `1.1.0` — only its `homepage`/`repository` URLs moved. The three host test libs
 (`tests/{claude,codex,kimi}/lib.sh`) now resolve the `sdd` install; `tests/codex/model-guard.sh`
 invokes `$sdd:<skill>`; CI runs the sync checks from `plugins/sdd/tests/`.
+
+**Kimi Code now gets a model identity, via `UserPromptSubmit`.** New hook
+`plugins/sdd/hooks/kimi-model-context.sh`, wired into `kimi.plugin.json`. Kimi is the one
+host that states no model ID anywhere the model can read: its system prompt names only "Kimi Code
+CLI", and no hook payload carries a `model` field (`SessionStart` gives
+`hook_event_name`/`session_id`/`cwd`/`source`). Models do not stop at `unsure` when the ID is
+missing — they guess. Observed before the fix: a budget `kimi-for-coding` session reasoning "Kimi
+Code CLI runs on k3, k3 is frontier" and then authoring `.spec.md` + `bd init`, and a k3 session
+adopting `default_model` out of `config.toml` — so on Kimi every gated skill either refused on
+*every* model or authored on a budget one.
+
+`UserPromptSubmit` is used because it is the only Kimi hook documented to append its output to
+context, and the only event whose payload carries the `session_id` the lookup needs. The ID is read
+from `modelAlias` in the session's own record under `$KIMI_CODE_HOME/sessions/*/<session_id>/`,
+last occurrence winning so an interactive `/model` switch is picked up. Two other sources were tried
+and are wrong, and the hook says so in place: the launching process's **argv**, because kimi
+overwrites its own argv with a bare `kimi-code` and erases `-m` (it survives only behind a wrapper
+like the harness's `timeout`); and **`default_model`**, which is the session's model only when the
+user did not override it — asserting it anyway measurably made things worse, taking the budget
+direction from 2/9 to 0/9 by telling a budget session it was frontier. The hook fails closed:
+silence leaves the session `unsure`, which the gated skills already handle by stopping.
+
+**Model Guard harnesses now assert the classification, and both directions.** All three
+`tests/{claude,codex,kimi}/model-guard.sh` gained (a) an assertion on the guard's mandatory first
+line, `model-guard: id=<exact-id> tier=<tier>`, via the new host-agnostic `guard_line` helper in
+`tests/lib.sh`, and (b) a **frontier direction**: a frontier model (`-M`, default
+`opus` / `gpt-5.6-sol` / `kimi-code/k3`) must classify `frontier` and continue past the Model
+Guard. New flags: `-M`, `--below-id`, `--frontier-id`, `--below-tier budget|medium`, `--only
+below|frontier`.
+
+Both were needed because a refusal-only harness cannot fail. A host that never states its model ID
+classifies `unsure`, and `unsure` refuses in the *same words* as `budget` — so a totally blind host
+scored a perfect pass. The frontier set is `/refine` and `/orchestrate`, not `/specify`: their
+Environment Guard stops on a missing `.beads/`, so a passing Model Guard is observable in an empty
+repo without authoring anything.
+
+**Three harness bugs surfaced while building this, two of which were why the old tests looked
+green.** Each is now fixed and commented in place so it is not reintroduced:
+
+- `REPO_ROOT` in `tests/lib.sh` resolved one level short of the repository root, so Kimi's
+  `sync_plugin` rsynced `plugins/` into the install root and left the real files untouched — every
+  Kimi trial ever run exercised the stale installed copy while the harness printed "synced".
+- The Claude harness read plain `claude -p`, which prints only the *final* assistant message. The
+  `model-guard:` line is that final message when the guard stops but an early turn when it passes,
+  so the harness saw it on every stop and never on a pass, and read a healthy guard as broken. It now
+  captures `--output-format stream-json --verbose` and asserts the guard line across the whole
+  stream, while refusal prose and `infra_error` are read from the final message only — matching stop
+  prose across the raw stream would hit the skill text the model read, and `infra_error`'s 429
+  pattern matched hex fragments of session UUIDs (`-429a`) and scored healthy trials inconclusive.
+- The frontier direction briefly asserted that the refusal sentence was *absent* and false-failed on
+  Codex, whose transcript echoes the SKILL.md it read. It now asserts the guard line only.
+
+**New positive-direction harnesses for `/specify`, on all three hosts.** Two manual-only suites
+(manual like the other model-calling tests — slow, probabilistic, credentialed):
+`tests/{claude,codex,kimi}/socratic-loop.sh` feeds descriptions seeded with a vague word ("fast",
+"secure", "handles errors") and asserts the architect asks — with a recommended answer — instead of
+drafting past it (no `.spec.md`, no bd backlog), the 3.0.0 Socratic loop made checkable; and
+`tests/{codex,kimi}/authoring-format.sh` ports the Claude format suite to the other two hosts. All
+three `authoring-format.sh` twins also gained the 3.0.0 rubric assertions: a well-formed
+`Recommended Solver: <rung> · effort <low|high|max>` Complexity call per story (never `effort
+medium`), and negative greps for the removed `Deliverable Format` section and the retired
+`planning` tier vocabulary.
 
 **Added Codex Model Guard coverage and host-authenticated model identity.**
 `plugins/case-solvers/tests/codex/model-guard.sh` is now the third host twin: it runs `/case`,
@@ -1207,7 +1395,7 @@ publishable Claude Code plugin marketplace.
   `claude plugin validate --strict`. The original values contained `: ` (colon-space)
   sequences that broke plain-scalar parsing and silently dropped the metadata.
 
-[Unreleased]: https://github.com/codxse/case-solvers/compare/v1.0.0...HEAD
+[3.0.0]: https://github.com/codxse/sdd/compare/v1.0.0...v3.0.0
 [1.0.0]: https://github.com/codxse/case-solvers/compare/v0.4.0...v1.0.0
 [0.4.0]: https://github.com/codxse/case-solvers/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/codxse/case-solvers/compare/v0.2.0...v0.3.0

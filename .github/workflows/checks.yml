@@ -1,6 +1,6 @@
 name: Checks
 
-# Both hosts install this plugin by copying the repo — there is no build step between
+# Every host installs this plugin by copying the repo — there is no build step between
 # a commit and a user's machine, so whatever lands on master is what ships. This is
 # the only gate; it has to hold here or nowhere.
 #

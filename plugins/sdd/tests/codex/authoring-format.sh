@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 #
 # authoring-format.sh — verify /specify AUTHORS to the contract format on a
-# frontier model. The companion to model-guard.sh: that one asserts a budget model
-# STOPS; this one asserts a frontier model FOLLOWS — it drafts a `.spec.md` that obeys the
-# Output Format and branches Story vs Epic by size (the "Authoring: Story vs Epic"
-# section of skills/specify/SKILL.md).
+# frontier model, on Codex. The Codex twin of tests/claude/authoring-format.sh —
+# same property, same grading, different host.
 #
-# In headless single-turn mode the Staging Loop writes the draft to `.spec.md` and
-# stops before the user's commit confirmation, so the draft IS the artifact we
-# grade. A trial PASSES when:
+# The companion to model-guard.sh: that one asserts a budget model STOPS; this
+# one asserts a frontier model FOLLOWS — it drafts a `.spec.md` that obeys the
+# Output Format and branches Story vs Epic by size (the "Authoring: Story vs
+# Epic" section of skills/specify/SKILL.md).
+#
+# In headless single-turn mode the Staging Loop writes the draft to `.spec.md`
+# and stops before the user's commit confirmation, so the draft IS the artifact
+# we grade. A trial PASSES when:
 #   * the guard did NOT falsely refuse a frontier model, AND
 #   * `.spec.md` exists, AND
 #   * STORY case  → exactly one contract: 1 `Acceptance Criteria` heading, a
@@ -30,15 +33,10 @@
 # explicit language leaves nothing the loop must ask, so the draft is still the
 # artifact we grade.
 #
-# Permission mode is `bypassPermissions` (not acceptEdits): the architect must Read
-# the shared rubrics — which live outside the temp repo — and may `bd init`. Under
-# acceptEdits those prompt and stall, starving the test of the very Output Format it
-# is checking.
-#
 # Usage:
-#   tests/claude/authoring-format.sh [-n TRIALS] [-m MODEL] [-v] [--no-sync]
+#   tests/codex/authoring-format.sh [-n TRIALS] [-m MODEL] [-v] [--no-sync]
 #     -n  trials per description  (default 2)
-#     -m  frontier model alias    (default opus)
+#     -m  frontier model          (default gpt-5.6-sol)
 #     -v  verbose: print each trial's raw output and the draft
 #     --no-sync  skip overlaying the working tree onto the install
 #
@@ -48,10 +46,9 @@ set -u
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 TRIALS=2
-MODEL=opus
+MODEL=gpt-5.6-sol
 VERBOSE=0
 SYNC=1
-args=()
 while [ $# -gt 0 ]; do
   case "$1" in
     -n) TRIALS=$2; shift 2 ;;
@@ -92,16 +89,29 @@ ERR=0
 FAILLOG=$(mktemp)
 
 # $1 = kind (story|epic), $2 = description
-# Returns: 0=PASS, 1=FAIL, 2=ERROR (trial never reached the model — inconclusive).
+# Returns: 0=PASS, 1=FAIL, 2=ERROR (trial never reached the model).
 run_trial() {
-  local kind="$1" desc="$2" dir out draft
+  local kind="$1" desc="$2" dir out rc draft
   dir=$(mktemp -d)
   ( cd "$dir" && git init -q )
   seed_fixture "$dir"
-  out=$( cd "$dir" && timeout 300 claude -p "/specify $desc" \
-           --model "$MODEL" --permission-mode bypassPermissions 2>&1 )
+  out=$( cd "$dir" && run_clean_env timeout 300 codex exec \
+           --ephemeral \
+           --sandbox workspace-write \
+           --model "$MODEL" \
+           --dangerously-bypass-hook-trust \
+           "\$sdd:specify $desc" </dev/null 2>&1 )
+  rc=$?
 
   local infra
+  if [ "$rc" -ne 0 ]; then
+    rm -rf "$dir"
+    infra=$(infra_error "$out" || true)
+    [ -n "$infra" ] || infra="codex exec exited $rc"
+    { printf '\n--- ERROR [%s %s] /specify %s\n    %s\n' "$MODEL" "$kind" "$desc" "$infra"; } >>"$FAILLOG"
+    [ "$VERBOSE" -eq 1 ] && printf '  ERROR: %s\n' "$infra"
+    return 2
+  fi
   if infra=$(infra_error "$out"); then
     rm -rf "$dir"
     { printf '\n--- ERROR [%s %s] /specify %s\n    %s\n' "$MODEL" "$kind" "$desc" "$infra"; } >>"$FAILLOG"
@@ -111,11 +121,11 @@ run_trial() {
 
   local -a problems=()
 
-  # The guard must NOT refuse a frontier model. (The diagnostic `tier=frontier`
-  # line isn't reliably surfaced in headless final output, so we don't require it;
-  # successful authoring below is itself proof the guard let a frontier model pass.
-  # The budget-STOP direction is covered by model-guard.sh.)
-  grep -qiE 'must run on a frontier model' <<<"$out" && problems+=("falsely refused a frontier model")
+  # No false-refusal grep on this host: a `codex exec` transcript echoes the SKILL.md
+  # the model read, so matching "must run on a frontier model" hits the skill's own
+  # prose (the same trap model-guard.sh documents). A real false refusal still fails
+  # here as "no .spec.md draft written", with the stop message visible under -v. The
+  # below-frontier direction is covered by model-guard.sh.
 
   draft="$dir/.spec.md"
   if [ ! -f "$draft" ]; then
@@ -123,11 +133,7 @@ run_trial() {
   else
     local body ac_count solver_count
     body=$(cat "$draft")
-    # Count AC headings at any level (H2 in a single story; children in an epic doc
-    # may nest deeper) — robust to decomposition formatting.
     ac_count=$(grep -cE '^#+[[:space:]]+Acceptance Criteria' <<<"$body")
-    # 3.0.0 removals — regressions the rubric sync can't catch, since they live in
-    # what the model *does* with the rubric, not in the rubric text itself.
     grep -qiF "Deliverable Format" <<<"$body" && problems+=("draft carries a removed 'Deliverable Format' section")
     grep -qiE '\bplanning (model|tier|rung)' <<<"$body" && problems+=("draft uses retired 'planning' tier vocabulary")
     grep -qE 'effort[ :=*]+medium\b' <<<"$body" && problems+=("effort scale regressed to 'medium' — that names a rung; the scale is low/high/max")
@@ -171,7 +177,12 @@ run_trial() {
 
 [ "$SYNC" -eq 1 ] && { sync_plugin || exit 1; }
 
-echo "authoring-format: model=$MODEL trials/desc=$TRIALS  story=${#STORY_DESCRIPTIONS[@]} epic=${#EPIC_DESCRIPTIONS[@]}"
+if ! codex debug models 2>/dev/null | grep -qF "\"slug\":\"$MODEL\""; then
+  echo "authoring-format (codex): model '$MODEL' is not present in the active Codex catalog." >&2
+  exit 2
+fi
+
+echo "authoring-format (codex): model=$MODEL trials/desc=$TRIALS  story=${#STORY_DESCRIPTIONS[@]} epic=${#EPIC_DESCRIPTIONS[@]}"
 
 run_set() {  # $1=kind; remaining args = descriptions
   local kind="$1"; shift

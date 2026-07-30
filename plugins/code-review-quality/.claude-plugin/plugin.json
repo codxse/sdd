@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "code-review-quality",
+  "displayName": "Code Review Quality",
+  "version": "1.0.0",
+  "description": "Multi-axis code review before merge — correctness, readability, architecture, security, performance — reported as severity-labelled findings and a verdict. Reviews the working diff by default, or a commit, branch, tag, path, or PR. --effort sets depth; --fix applies the fixes in place and leaves them uncommitted. Any model tier; no dependencies.",
+  "author": { "name": "nadiar", "email": "codex@nadiar.id" },
+  "homepage": "https://github.com/codxse/sdd",
+  "repository": "https://github.com/codxse/sdd",
+  "license": "MIT",
+  "keywords": ["code-review", "review", "quality", "correctness", "security", "performance", "refactor", "diff", "pull-request"]
+}

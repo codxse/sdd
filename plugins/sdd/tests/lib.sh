@@ -11,8 +11,11 @@
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Absolute path to the working-tree repository root (the Kimi install copies the
-# whole repo, not just the plugin dir).
-REPO_ROOT="$(cd "$PLUGIN_ROOT/.." && pwd)"
+# whole repo, not just the plugin dir). Two levels up from PLUGIN_ROOT
+# (plugins/sdd), not one — resolving one level short silently rsynced
+# `plugins/` into the install root, so every Kimi trial ran the stale installed copy
+# while the harness printed "synced".
+REPO_ROOT="$(cd "$PLUGIN_ROOT/../.." && pwd)"
 
 # Run a model CLI with only the process state it needs for local auth, command
 # discovery, and stable text output. A guard slip may cause the model to inspect
@@ -21,7 +24,7 @@ REPO_ROOT="$(cd "$PLUGIN_ROOT/.." && pwd)"
 run_clean_env() {
   local test_path
   local env_args=()
-  test_path="$HOME/.local/bin:$HOME/.kimi-code/bin:/usr/local/bin:/usr/bin:/bin"
+  test_path="$HOME/.local/bin:$HOME/.kimi-code/bin:$HOME/.opencode/bin:/usr/local/bin:/usr/bin:/bin"
   env_args+=(
     HOME="$HOME"
     PATH="$test_path"
@@ -34,7 +37,31 @@ run_clean_env() {
   )
   [ -n "${CODEX_HOME:-}" ] && env_args+=(CODEX_HOME="$CODEX_HOME")
   [ -n "${CLAUDE_CONFIG_DIR:-}" ] && env_args+=(CLAUDE_CONFIG_DIR="$CLAUDE_CONFIG_DIR")
+  [ -n "${OPENCODE_CONFIG_DIR:-}" ] && env_args+=(OPENCODE_CONFIG_DIR="$OPENCODE_CONFIG_DIR")
+  # Opt-in forwarding for host setups whose model access needs a named variable —
+  # e.g. an API key a config file reads via `{env:VAR}`. Named explicitly by the
+  # operator (`SDD_TEST_ENV="FOO BAR"`) so the allowlist above stays the default and
+  # a guard slip still cannot sweep up unrelated credentials.
+  local extra
+  for extra in ${SDD_TEST_ENV:-}; do
+    [ -n "${!extra:-}" ] && env_args+=("$extra=${!extra}")
+  done
   env -i "${env_args[@]}" "$@"
+}
+
+# Assert the Model Guard's mandatory first line: `model-guard: id=<exact-id> tier=<tier>`.
+#
+# Checking the *classification* — not only the refusal prose — is what separates a
+# correct tier decision from a host that never told the model its ID at all. A session
+# that cannot read its own ID classifies `unsure`, and `unsure` refuses with the same
+# words as `budget`, so a refusal-only assertion scores a totally blind host as a pass.
+#
+# The id is matched as a substring so a host *alias* (`-m haiku`) can be asserted against
+# the ID the model actually reports (`claude-haiku-4-5`), and so surrounding punctuation
+# the model may add (backticks, quotes) doesn't matter. The substring is used as an ERE,
+# which only makes a `.` in a slug laxer — never stricter.
+guard_line() {  # $1=output  $2=expected id substring  $3=expected tier
+  grep -qE "model-guard:[[:space:]]*id=[^[:space:]]*$2[^[:space:]]*[[:space:]]+tier=$3" <<<"$1"
 }
 
 # Classify output that means the trial never actually reached the model — a session
