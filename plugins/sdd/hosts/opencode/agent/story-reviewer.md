@@ -3,6 +3,7 @@ name: story-reviewer
 description: Review-and-apply for one bd story branch during /validate --unattended — runs code-review-quality (or the host's own code review) with fixes applied against the story's contract inside its worktree, leaves fixes unstaged. Medium-rung reviewer, for solver-budget and solver-medium stories. Spawned by /validate; not meant for direct use.
 mode: subagent
 model: anthropic/claude-sonnet-5
+variant: medium
 effort: medium
 permission:
   task: deny

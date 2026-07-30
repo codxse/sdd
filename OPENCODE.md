@@ -199,6 +199,19 @@ If you run a single-model setup (one router, one slug), point both files at it. 
 opencode's one-rung behavior, which is fine as long as the slug is frontier-class; the review pass
 stops rather than review on a budget model.
 
+### Reasoning effort
+
+opencode calls reasoning effort a **model variant**, and it is the only lever that works here — the
+`effort:` field the other hosts read is accepted by opencode's agent schema but swept into `options`,
+where it never reaches the API. So both shipped agents carry a `variant` alongside their `model` pin:
+`high` for `story-reviewer-strong`, `medium` for `story-reviewer`.
+
+An agent-level `variant` **only applies when the agent also pins `model`** and that model is the one in
+use; without a model pin it is silently ignored. Both agents pin one, so this holds as shipped — but if
+you repoint them at a provider whose models expose different variant names, check the names with
+`opencode models <provider> --verbose`. An unknown variant is **silently dropped**, not rejected, so a
+typo costs you the effort you asked for and says nothing.
+
 ### Tools and permissions
 
 The definitions deliberately **don't** grant themselves permissions. They deny `task` (no nested

@@ -3,6 +3,7 @@ name: story-reviewer-strong
 description: Review-and-apply for one bd story branch during /validate — runs code-review-quality (or the host's own code review) with fixes applied against the story's contract inside its worktree, leaves fixes unstaged. Frontier-rung reviewer, for solver-frontier stories, same-rung step-ups, and the default whenever a human is present. Spawned by /validate; not meant for direct use.
 mode: subagent
 model: anthropic/claude-opus-5
+variant: high
 effort: high
 permission:
   task: deny

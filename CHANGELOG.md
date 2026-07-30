@@ -9,6 +9,16 @@ Versions track the published plugin/marketplace, not the skills' internal frontm
 versions (shown in parentheses where relevant). Entries below `3.0.0` name the project as it
 shipped at the time — `case-solvers` — and are left as written.
 
+## [Unreleased]
+
+**opencode reviewer agents now pin reasoning effort.** `story-reviewer-strong` carries
+`variant: high`, `story-reviewer` carries `variant: medium`. On opencode, `variant` — not `effort` — is
+the reasoning-effort control; the `effort:` field the other hosts read is accepted by opencode's agent
+schema but swept into `options` and never reaches the API, so the review pass was running at the
+model's default effort. `effort:` stays for the hosts where it does work. Both agents already pin
+`model:`, which opencode requires for an agent-level `variant` to apply at all — without a model pin it
+is silently ignored.
+
 ## [3.2.0] - 2026-07-30
 
 **New host: [opencode](https://opencode.ai).** All eight skills, both reviewer subagents, and the
