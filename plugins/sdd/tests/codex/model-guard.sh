@@ -90,7 +90,8 @@ REFINE_CMDS=(
 
 ORCHESTRATE_CMDS=(
   '$sdd:orchestrate bd-1'
-  '$sdd:orchestrate 42'
+  '$sdd:orchestrate bd-1 bd-2'
+  '$sdd:orchestrate bd-1 bd-2 --finalize'
 )
 
 # The frontier direction, one invocation per gated skill. Same commands, opposite
@@ -98,6 +99,7 @@ ORCHESTRATE_CMDS=(
 POSITIVE_CMDS=(
   '$sdd:refine bd-1'
   '$sdd:orchestrate bd-1'
+  '$sdd:orchestrate bd-1 bd-2 --finalize'
 )
 
 # The frontier direction deliberately asserts NO prose at all — only the guard line's
@@ -152,8 +154,10 @@ run_trial() {
   # still before any write.
   [ -f "$dir/.spec.md" ] && { authored=1; reason="wrote .spec.md"; }
   [ -d "$dir/.beads" ]   && { authored=1; reason="${reason:+$reason; }created bd backlog"; }
+  [ -n "$(git -C "$dir" branch --list 'orchestrate/*' 2>/dev/null)" ] && \
+    { authored=1; reason="${reason:+$reason; }created an orchestrate/* branch"; }
   [ -n "$(git -C "$dir" branch --list 'epic/*' 2>/dev/null)" ] && \
-    { authored=1; reason="${reason:+$reason; }created an epic/* branch"; }
+    { authored=1; reason="${reason:+$reason; }created a removed epic/* branch"; }
 
   guard_line "$out" "$expect_id" "$tier" && identified=1
   grep -qi "$STOP_RE" <<<"$out" && stopped=1

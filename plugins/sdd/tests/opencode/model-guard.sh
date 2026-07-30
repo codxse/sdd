@@ -111,7 +111,8 @@ REFINE_ARGS=(
 # /orchestrate invocations — same ordering requirement as /refine.
 ORCHESTRATE_ARGS=(
   "bd-1"
-  "42"
+  "bd-1 bd-2"
+  "bd-1 bd-2 --finalize"
 )
 
 # The below-gate direction matches the refusal loosely: the model may paraphrase the
@@ -150,8 +151,10 @@ run_trial() {
   # stop at the Environment Guard, still before any write.
   [ -f "$dir/.spec.md" ] && { authored=1; reason="wrote .spec.md"; }
   [ -d "$dir/.beads" ]   && { authored=1; reason="${reason:+$reason; }created bd backlog"; }
+  [ -n "$(git -C "$dir" branch --list 'orchestrate/*' 2>/dev/null)" ] && \
+    { authored=1; reason="${reason:+$reason; }created an orchestrate/* branch"; }
   [ -n "$(git -C "$dir" branch --list 'epic/*' 2>/dev/null)" ] && \
-    { authored=1; reason="${reason:+$reason; }created an epic/* branch"; }
+    { authored=1; reason="${reason:+$reason; }created a removed epic/* branch"; }
 
   guard_line "$out" "$expect_id" "$tier" && identified=1
   grep -qi "$STOP_RE" <<<"$out" && stopped=1
@@ -187,7 +190,7 @@ else
 fi
 
 echo "model-guard (opencode): below=$BELOW_MODEL($BELOW_TIER) frontier=$FRONTIER_MODEL trials/invocation=$TRIALS"
-echo "  below: /specify=${#DESCRIPTIONS[@]} /refine=${#REFINE_ARGS[@]} /orchestrate=${#ORCHESTRATE_ARGS[@]}   frontier: 2"
+echo "  below: /specify=${#DESCRIPTIONS[@]} /refine=${#REFINE_ARGS[@]} /orchestrate=${#ORCHESTRATE_ARGS[@]}   frontier: 3"
 
 run_set() {  # $1=label $2=direction $3=tier $4=model $5=expect-id $6=command; rest = arg strings
   local label="$1" direction="$2" tier="$3" model="$4" expect_id="$5" command="$6"; shift 6
@@ -214,6 +217,7 @@ fi
 if [ "$ONLY" != below ]; then
   run_set "frontier/refine"      frontier frontier "$FRONTIER_MODEL" "$FRONTIER_ID" refine      "bd-1"
   run_set "frontier/orchestrate" frontier frontier "$FRONTIER_MODEL" "$FRONTIER_ID" orchestrate "bd-1"
+  run_set "frontier/finalize"    frontier frontier "$FRONTIER_MODEL" "$FRONTIER_ID" orchestrate "bd-1 bd-2 --finalize"
 fi
 
 TOTAL=$((PASS+FAIL+ERR))

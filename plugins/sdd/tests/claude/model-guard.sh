@@ -103,7 +103,8 @@ REFINE_CMDS=(
 # no epic, no .beads/, and nothing to orchestrate.
 ORCHESTRATE_CMDS=(
   "/orchestrate bd-1"
-  "/orchestrate 42"
+  "/orchestrate bd-1 bd-2"
+  "/orchestrate bd-1 bd-2 --finalize"
 )
 
 # The frontier direction, one invocation per gated skill. Same commands, opposite
@@ -111,6 +112,7 @@ ORCHESTRATE_CMDS=(
 POSITIVE_CMDS=(
   "/refine bd-1"
   "/orchestrate bd-1"
+  "/orchestrate bd-1 bd-2 --finalize"
 )
 
 # The below-gate direction matches the refusal loosely: the model may paraphrase the
@@ -166,8 +168,10 @@ run_trial() {
   # stop at the Environment Guard, still before any write.
   [ -f "$dir/.spec.md" ] && { authored=1; reason="wrote .spec.md"; }
   [ -d "$dir/.beads" ]   && { authored=1; reason="${reason:+$reason; }created bd backlog"; }
+  [ -n "$(git -C "$dir" branch --list 'orchestrate/*' 2>/dev/null)" ] && \
+    { authored=1; reason="${reason:+$reason; }created an orchestrate/* branch"; }
   [ -n "$(git -C "$dir" branch --list 'epic/*' 2>/dev/null)" ] && \
-    { authored=1; reason="${reason:+$reason; }created an epic/* branch"; }
+    { authored=1; reason="${reason:+$reason; }created a removed epic/* branch"; }
 
   local identified=0 stopped=0
   guard_line "$out" "$expect_id" "$tier" && identified=1

@@ -5,7 +5,7 @@
 
 | Plugin | Skills | Purpose |
 |--------|--------|---------|
-| `sdd` | `/milestone`, `/specify`, `/refine`, `/board`, `/solve`, `/validate`, `/orchestrate` | Socratic milestone memory with optional bd sync, plus a parallel workflow: author stories/epics → solve in worktrees → review & merge, or automate a whole epic behind one PR |
+| `sdd` | `/milestone`, `/specify`, `/refine`, `/board`, `/solve`, `/validate`, `/orchestrate` | Local-only Socratic milestone memory with optional bd sync, plus a parallel workflow: author stories/epics → solve in worktrees → review & merge, or orchestrate ordered story/epic targets behind one PR/MR |
 | `code-review-quality` | `/code-review-quality` | Multi-axis review of a change before merge — severity-labelled findings and a verdict, optionally applied in place |
 | `writing-claude-md` | `/writing-claude-md` | Write lean, high-signal CLAUDE.md / AGENTS.md context files |
 
@@ -54,8 +54,8 @@ into `main`.
 
 So three roles fall out, each matched to the model that's actually good at it:
 
-- **Frontier model — the architect.** Grills me into a clear story (WHAT/WHY), and drives a whole
-  epic when I'm not watching. `/specify`, `/refine`, `/orchestrate`.
+- **Frontier model — the architect.** Grills me into a clear story (WHAT/WHY), and drives an ordered
+  story/epic run when I'm not watching. `/specify`, `/refine`, `/orchestrate`.
 - **Any tier — the solver.** Executes one bounded story (HOW), on whatever rung the story's own
   complexity call asks for. `/solve`.
 - **Me — the validator.** Reviews and merges. `/validate`.
@@ -108,7 +108,7 @@ On Codex, `/solve` and `/validate` are **slash-only** — they bake work into a 
 auto-fire mid-conversation. `/milestone`, `/specify`, `/refine`, `/board`, `/orchestrate`, and
 `/code-review-quality` also answer plain English (for example, "run the epic", "show the board", or
 "review my changes"). Invoke any plugin skill explicitly with its qualified name, such as
-`$sdd:orchestrate <epic-id>`.
+`$sdd:orchestrate <epic-id> <story-id>`.
 
 **Kimi Code**
 
@@ -158,9 +158,11 @@ this repo, and how to test the guard in both directions.
 
 **Requirements:** `/milestone` create/show/update needs only git; `/milestone --sync` and the rest of
 the `sdd` workflow need the `bd` CLI on your `PATH` — see
-[the command reference below](#sdd--bd-backed-parallel-coding-workflow). `/orchestrate` additionally
-needs the `gh` CLI, authenticated, for opening its final PR. `code-review-quality` needs only `git`,
-plus `gh` if you point it at a PR number. `writing-claude-md` has no dependencies.
+[the command reference below](#sdd--bd-backed-parallel-coding-workflow). `/orchestrate` uses
+authenticated `gh` for a GitHub remote or `glab` for GitLab. If the matching CLI is unavailable, it
+asks before doing any work whether to stop or use git-only publication; finalization still requires
+the matching CLI to verify the merge. `code-review-quality` needs only `git`, plus `gh` if you point
+it at a GitHub PR number. `writing-claude-md` has no dependencies.
 
 **Reviewer agents (recommended):** the plugin ships two review-and-apply agent definitions —
 `story-reviewer` (medium rung) and `story-reviewer-strong` (frontier rung) — that `/validate`
@@ -319,7 +321,7 @@ marketplace entry keeps resolving, but it will keep serving you the old plugin i
 
 ## `sdd` — bd-backed, parallel coding workflow
 
-The current milestone sits above the execution loop as lightweight project memory. The
+The current milestone sits above the execution loop as local-only project memory. The
 [three roles](#why-i-built-this) remain the **architect** (`/specify`, `/refine`, `/orchestrate`), the
 **solver** (`/solve`), and you, the **validator** (`/validate`). Work lives in
 [**bd** (Beads)](https://github.com/steveyegge/beads) — a git-backed, dependency-aware issue tracker
@@ -360,12 +362,13 @@ skills never prompt for codebase exploration.
 On **any model**, track the current project direction:
 
 - **`/milestone [--sync|<description|update>]`** -> creates, shows, or updates `.milestone.md` in the
-  main checkout. Creation uses a short Socratic loop to clarify the outcome and observable Done When
-  conditions without descending into implementation details. The file also keeps a Todo checklist
-  for milestone capabilities that do not have a bd epic yet. `--sync` reads bd to refresh linked epic
-  status/story progress. An exact unique title match proposes a Todo/title-only link for human
-  confirmation; it never adopts an epic from title alone. It never writes to bd, and `/specify`
-  remains unchanged.
+  main checkout. It keeps the file local through the repository's `.git/info/exclude` and refuses to
+  edit a tracked or staged copy. Creation uses a short Socratic loop to clarify the outcome and
+  observable Done When conditions without descending into implementation details. The file also
+  keeps a Todo checklist for milestone capabilities that do not have a bd epic yet. `--sync` reads bd
+  to refresh linked epic status/story progress. An exact unique title match proposes a
+  Todo/title-only link for human confirmation; it never adopts an epic from title alone. It never
+  writes to bd, and `/specify` remains unchanged.
 
 On a **frontier model** (Opus / Fable / Mythos / `gpt-5.6-sol` / Qwen3.8-Max-class / Kimi-K3-class)
 — author the *what*:
@@ -376,12 +379,15 @@ On a **frontier model** (Opus / Fable / Mythos / `gpt-5.6-sol` / Qwen3.8-Max-cla
   likely to succeed — so you know which model to run `/solve` on.
 - **`/refine <id>`** → revises an existing story's contract from a `/solve` spec-gap, an `/validate`
   change-request, or your own ask — stays WHAT-only, returns it to ready.
-- **`/orchestrate <epic-id>`** → automates the `/solve` → review → land loop across a whole epic's
-  stories, landing each on an integration branch instead of one at a time by hand, and stops at a
-  single pull request for you to review and merge — the one human gate for the epic. Stories run one
-  at a time by default (a `--parallel` flag opts into dispatching a ready wave concurrently, at the
-  cost of cross-story merge conflicts on epics whose stories touch the same files). It runs
-  unsupervised for most of the epic, which is why it needs the same tier as `/specify`/`/refine`.
+- **`/orchestrate <id> [<id> ...]`** → accepts an ordered mix of story and epic ids, expands epics to
+  their direct stories, deduplicates the combined scope, and automates `/solve` → review → land on one
+  deterministic `orchestrate/<run>` branch. Input order controls serial priority, while readiness
+  still wins; `--parallel` dispatches a ready wave concurrently. It opens one GitHub PR through `gh`
+  or GitLab MR through `glab` for the human gate. When that positively identified forge's matching
+  CLI is unavailable or unauthenticated, it can use git-only publication only after asking first.
+  Unknown forges stop. After that PR/MR merges, rerun the same targets with `--finalize`: each
+  selected epic whose live children are all closed is closed independently, then `/milestone --sync`
+  refreshes local project memory and proposes exact-title links. Every mode requires frontier.
 
 On **any rung** — budget (Haiku / Gemini Flash / MiniMax-M3 / Kimi-K2-class incl. `kimi-for-coding`),
 medium (Sonnet / `gpt-5.5` / `gpt-5.6-terra` / Gemini Pro-class), or frontier — do the *how*, on
@@ -408,9 +414,10 @@ milestone is optional project memory around that loop:
 /milestone ship a public beta where customers can complete the primary workflow
 ```
 
-After the clarification loop and your confirmation, this creates `.milestone.md`. `/specify` remains
-unchanged and does not read it automatically. Add resulting epics to the milestone yourself, or run
-`/milestone --sync` to propose a link when a Todo title exactly matches a bd epic title.
+After the clarification loop and your confirmation, this creates local-only `.milestone.md` and adds
+it to the repository-local git exclude. `/specify` remains unchanged and does not read it
+automatically. Add resulting epics to the milestone yourself, or run `/milestone --sync` to propose a
+link when a Todo title exactly matches a bd epic title.
 
 ```
 /specify add a forgot-password reset email flow
@@ -426,10 +433,10 @@ worktree+branch. `/validate <id>` reviews and merges, unblocking dependents. If 
 `needs-refinement`, `/refine <id>` rewrites the *contract* (not the code) and returns it to ready.
 `bd` enforces dependencies throughout, so a blocked story is always refused with a reason.
 
-For an epic, `/orchestrate <epic-id>` automates that whole solve-review-land cycle instead of you
-running it story by story — it works on an integration branch, reviews every story itself at the
-effort its Complexity call recommends, and only asks for you once, at the end, on the one PR that
-merges the epic.
+For a larger run, `/orchestrate <id> [<id> ...]` automates that solve-review-land cycle across the
+ordered selected stories and epics. It works on one integration branch, reviews every story at its
+recommended effort, and gives you one final PR/MR to merge. After merge, run the same target set with
+`--finalize`; complete selected epics close independently and `.milestone.md` synchronizes once.
 
 ### Runtime artifacts
 
@@ -437,7 +444,7 @@ Stored in **your working project** (not this repo):
 
 | What | Where | Purpose |
 |------|-------|---------|
-| Current milestone | `.milestone.md` | Outcome, Done When, unmatched Todo, and epic-progress memory. |
+| Current milestone | `.milestone.md` (local-only, git-excluded) | Outcome, Done When, unmatched Todo, and epic-progress memory. |
 | Stories / epics | `.beads/` (git-committed) | The durable backlog + dependency graph. |
 | Feedback / refine notes | bd comments on a story | Per-story review feedback (refine notes + your verdicts). |
 | Work under review | git worktrees on `bd/<id>` | Isolated branch per story awaiting `/validate`. |

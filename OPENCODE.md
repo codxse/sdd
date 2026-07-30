@@ -297,9 +297,12 @@ because the workarounds would be worse than the gaps:
 
 ## Requirements
 
-`/milestone` create/show/update needs only git. `/milestone --sync` and the story/epic workflow need
-the `bd` ([Beads](https://github.com/steveyegge/beads)) CLI on your `PATH`. `/orchestrate`
-additionally needs `gh`, authenticated, for its final PR. `code-review-quality` needs only `git`, plus
-`gh` if you point it at a PR number. `writing-claude-md` has no dependencies.
+`/milestone` create/show/update needs only git and keeps `.milestone.md` local through
+`.git/info/exclude`. `/milestone --sync` and the story/epic workflow need the `bd`
+([Beads](https://github.com/steveyegge/beads)) CLI on your `PATH`. `/orchestrate` uses authenticated
+`gh` for GitHub or `glab` for GitLab; if the matching CLI is missing, it asks before work starts
+whether to stop or publish the branch with git only. Post-merge `--finalize` still needs the matching
+CLI to verify the merge. `code-review-quality` needs only `git`, plus `gh` if you point it at a
+GitHub PR number. `writing-claude-md` has no dependencies.
 
 For what the commands actually do, see the [README](README.md).

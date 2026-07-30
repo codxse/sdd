@@ -11,6 +11,30 @@ shipped at the time — `case-solvers` — and are left as written.
 
 ## [Unreleased]
 
+**Multi-target `/orchestrate` (`1.8.0`).** `/orchestrate` now accepts an ordered mix of story and
+epic ids. Epics expand to their direct stories, duplicate stories run once, input order controls
+serial priority while readiness still wins, and every selection uses one deterministic
+`orchestrate/<anchor>-<hash>` integration branch. The old single-epic `epic/<id>` branch mode is
+removed. One run produces one GitHub PR through `gh` or GitLab MR through `glab`; if the matching CLI
+is unavailable, pre-flight asks whether to stop or push git-only. Git-only runs never claim a forge
+request and still require the matching CLI for merge verification.
+
+`/orchestrate --finalize` is a frontier-only post-merge mode. It verifies the exact merged PR/MR,
+re-reads each explicitly selected epic's live children, and closes every complete epic independently,
+so a partial merged run can finish one epic while leaving another open. It then invokes
+`/milestone --sync` once; exact-id links refresh and exact unique title matches remain confirmation
+proposals. Standalone story roots never cause parent-epic inference.
+
+**Local-only `/milestone` (`1.2.0`).** `.milestone.md` is now protected through the repository-local
+`.git/info/exclude`, never the committed `.gitignore`. `/milestone` refuses a tracked or staged copy,
+and orchestration verifies the file is untracked, unstaged, and ignored before release commits.
+`--sync` also re-reads before writing so concurrent human edits are recomputed once or stopped rather
+than overwritten. `/validate` `1.18.1` generalizes its unattended wording from epic branches to
+orchestration run branches.
+
+`sdd` `3.3.0` -> `3.4.0` in both plugin manifests and both marketplaces; the Kimi bundle also moves
+to `3.4.0`.
+
 **New sdd skill: `/milestone` (`1.1.0`).** One lightweight project-memory file,
 `.milestone.md`, records the current milestone's outcome, milestone-level Done When conditions,
 Todo capabilities not yet represented in bd, current epic, and epic checklist. `/milestone` with no

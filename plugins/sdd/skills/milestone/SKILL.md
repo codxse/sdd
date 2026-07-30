@@ -1,7 +1,7 @@
 ---
 name: milestone
-description: 'Create, show, update, or sync the project milestone stored in .milestone.md. Uses a lightweight Socratic loop to clarify the outcome, then tracks done conditions, current epic, bd epic progress, and milestone work not yet represented by an epic. Use when the user asks to set a milestone, show milestone progress, change the current epic, mark an epic complete, or sync milestone state from bd.'
-version: 1.1.0
+description: 'Create, show, update, or sync the local-only project milestone stored in .milestone.md. Uses a lightweight Socratic loop to clarify the outcome, then tracks done conditions, current epic, bd epic progress, and milestone work not yet represented by an epic. Use when the user asks to set a milestone, show milestone progress, change the current epic, mark an epic complete, or sync milestone state from bd.'
+version: 1.2.0
 argument-hint: '[--sync|<description|update>]'
 disable-model-invocation: false
 user-invocable: true
@@ -22,6 +22,19 @@ never writes to bd, and never changes `/specify` behavior. The user maintains mi
 Store `.milestone.md` in the **main checkout root**, never in a linked worktree. Resolve the root as
 the first worktree entry from `git worktree list --porcelain`. If the current directory is not in a
 Git repository, stop and ask the user to run the command from the project repository.
+
+The file is **local-only project memory and must never be committed**. At the start of every mode:
+
+1. From the resolved main root, check whether `.milestone.md` is tracked or staged with
+   `git -C <main-root> ... -- .milestone.md`. If it is, stop and explain that the user must
+   remove it from version control/index before this skill can preserve the local-only guarantee.
+   Never untrack, unstage, delete, or rewrite it while tracked/staged.
+2. Resolve the repository-local exclude file with
+   `git -C <main-root> rev-parse --git-path info/exclude`. Ensure it
+   contains the exact root rule `/.milestone.md`, adding it once when absent. This local git metadata
+   is the only file besides `.milestone.md` this skill may modify.
+3. Verify `git -C <main-root> check-ignore -- .milestone.md` succeeds after the rule exists. Failure
+   stops the mode. Never add the rule to the committed `.gitignore`.
 
 One repository has one current milestone. Do not create milestone files in subdirectories.
 
@@ -80,6 +93,9 @@ milestone". `--sync` is the only flag; do not introduce a second state file.
 ### `--sync`: reconcile from bd
 
 `--sync` must be the whole argument. It reads bd and updates `.milestone.md`; it never writes to bd.
+`/orchestrate --finalize` invokes this mode once after it verifies a merged PR/MR and closes every
+selected epic whose live children are complete. That does not grant `/orchestrate` write ownership:
+this skill still performs the file reconciliation and title-link confirmation.
 
 Guards:
 
@@ -116,10 +132,13 @@ Sync only epic representation and progress. It never checks Done When, changes m
 creates Todo items, or decides that the milestone is complete. Epic completion is evidence, not the
 milestone outcome itself.
 
-Collect all unique title-match proposals and ask once which links to accept. Then rewrite
-`.milestone.md` once, and only when something changed. Report refreshed epics, confirmed Todo
-promotions/title-only links, declined matches, stale/ambiguous references, and how many Todo items
-still have no bd epic.
+Collect all unique title-match proposals and ask once which links to accept. Before writing, re-read
+`.milestone.md` and compare it with the exact content initially read. If it changed while bd was being
+queried or proposals were being confirmed, recompute the reconciliation once from the newest content.
+Re-read immediately before that write; if it changed again, stop and report a concurrent edit rather
+than overwrite it. Then rewrite `.milestone.md` once, and only when something changed. Report
+refreshed epics, confirmed Todo promotions/title-only links, declined matches, stale/ambiguous
+references, and how many Todo items still have no bd epic.
 
 ## File Format
 
@@ -182,13 +201,15 @@ Rules:
 
 ## Boundaries
 
-- `.milestone.md` is the only file this skill may write.
+- `.milestone.md` is the only project-content file this skill may write. It may also idempotently add
+  `/.milestone.md` to the repository-local git exclude file resolved by
+  `git -C <main-root> rev-parse --git-path info/exclude`.
 - Never run a bd write command or edit `.beads/`; `--sync` is strictly read-only toward bd.
 - Never edit `.spec.md`, source code, tests, manifests, or documentation.
 - Never invoke or alter `/specify`; the user adds an epic to the milestone through `/milestone`.
 - Outside `--sync`, never infer epic completion from code or bd. Even during sync, never infer Done
   When or milestone Status from bd. The user controls milestone completion.
-- Never stage, commit, or push the file.
+- Never stage, commit, push, untrack, or unstage the file. Never modify the committed `.gitignore`.
 
 ## Response
 

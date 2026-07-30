@@ -23,7 +23,7 @@ Codex's per-skill `agents/openai.yaml` opts a skill out of implicit invocation
 (`policy.allow_implicit_invocation: false`); omit it when the skill should be model-invocable.
 Shared frontmatter must keep `disable-model-invocation: false` so Codex accepts and discovers the
 skill. The exception is behavioral guards that must hold on a budget model:
-`plugins/sdd/tests/{claude,codex,kimi}/model-guard.sh` run `/specify`, `/refine`, and
+`plugins/sdd/tests/{claude,codex,kimi,opencode}/model-guard.sh` run `/specify`, `/refine`, and
 `/orchestrate` headless across multiple trials (including override-injection descriptions) and
 assert each Model Guard stops it. They assert **both directions and the classification itself**: a
 below-frontier model (`-m`, `--below-tier budget|medium`) must stop, a frontier model (`-M`) must
@@ -42,7 +42,7 @@ as inconclusive infra rather than the setup mistake it is; `tests/opencode/lib.s
 front, since opencode substitutes an *empty string* for an unset `{env:}` var instead of erroring.
 Codex's generic base prompt names only GPT-5, so its default plugin hook reads the host-provided
 `model` field and injects the exact slug. The harnesses call the real model, so they're slow and
-probabilistic — run them when changing any Model Guard. All three run model CLIs through the shared minimal environment
+probabilistic — run them when changing any Model Guard. All four run model CLIs through the shared minimal environment
 allowlist, so a guard slip cannot expose unrelated caller credentials. Host-specific install/sync
 helpers live under each host directory; `tests/lib.sh` keeps only the host-agnostic helpers.
 
@@ -146,17 +146,18 @@ publish the same three plugins under `plugins/`:
   in place on `bd/<id>` and amends — `/validate` carries no model gate, so the reviewer's model is
   pinned explicitly, never below `medium`, rather than inherited. Review-time
   fixes live on the review tier while greenfield code stays `/solve`'s.
-  `/milestone` and `/board` stand outside the tiers — milestone is lightweight file-backed project
-  memory with an explicit read-only bd sync, and board is a read-only render of
+  `/milestone` and `/board` stand outside the tiers — milestone is lightweight local-only file-backed
+  project memory with an explicit read-only bd sync, and board is a read-only render of
   the backlog (or one story), no model gate. A skill recognizes its own rung from its system prompt
   — by **model-ID substring**, not host, so each rung spans all three hosts
   (Opus/Fable frontier and Sonnet medium on Claude, `gpt-5.6-sol` vs `gpt-5.6-terra` on Codex,
   Kimi-K3-class on Kimi Code) plus host-agnostic entries like Qwen3.8-Max-class. `/orchestrate` adds
-  no fourth rung — it drives `/solve` and
-  `/validate` across a whole epic's stories and stops at one pull request for the human to merge —
-  but it requires **frontier** too, the same gate `/specify`/`/refine` carry, since it makes
-  unsupervised judgment calls throughout the run (pre-flight go/no-go, stalled-story triage, the
-  final PR's summary) with no human present until that PR.
+  no fourth rung — it drives `/solve` and `/validate` across an ordered immutable set expanded from
+  story and/or epic ids, on one run branch and one final GitHub PR or GitLab MR. Input order is the
+  serial priority, readiness still wins, and complete selected epics close independently only in an
+  explicit post-merge `--finalize`, followed by `/milestone --sync`. Every mode requires
+  **frontier**, since the normal run makes unsupervised judgment calls until its final PR/MR and
+  finalization changes bd epic state.
 - **`--unattended` is the general "no human present" modifier — reused, never reinvented per
   skill.** `/solve` and `/validate` both carry it, and the tier philosophy above decides what it
   means at each call site: `/validate --unattended` runs on `/orchestrate`'s own frontier-tier model,
@@ -177,20 +178,23 @@ publish the same three plugins under `plugins/`:
   them: `/milestone` (one project-memory file; `--sync` only reads bd), `/board` (read-only),
   `/refine` (names an id),
   `/specify` (authors a new story/epic — a plain-English ask like "let's put our problem to a case"
-  should reach it), and `/orchestrate` (drives an epic). `/code-review-quality` is model-invocable
+  should reach it), and `/orchestrate` (drives a selected run). `/code-review-quality` is model-invocable
   too — report-only is its default, and
   the one path that edits files (`--fix true`) is honored **only when the caller typed the flag**, so
   an implicit invocation can never reach it; that typed-flag rule is what keeps the blast radius of an
   auto-fire at zero, not the flag's default. `/specify` and `/refine` write to bd but are backstopped the same way: the
   frontier-tier **Model Guard** runs first and **nothing is committed to bd until the user confirms**.
   `/orchestrate` also runs its Model Guard before touching bd or git, and creates only a provisional
-  epic branch and final PR for human review. Model-invocable skills carry no
+  run branch and final PR/MR for human review. If the forge CLI is missing it asks before any write
+  whether to stop or push git-only; merge finalization still needs forge verification. Model-invocable skills carry no
   `allow_implicit_invocation: false` gate (and no `agents/openai.yaml` at all on Codex) — presence
   of that agent metadata is the at-a-glance marker of a slash-only skill.
 - **bd is the engine, not the interface.** bd (Beads) is the durable issue store, but the
   plugin's end user never types a `bd` command and never sees raw bd output — skills translate
   to/from bd and render human-friendly. `/milestone --sync` reads it only to reconcile the file's
-  linked epic progress and unmatched Todo; it never authors bd records. Keep bd hidden when editing
+  linked epic progress and unmatched Todo; it never authors bd records. `.milestone.md` is local-only:
+  `/milestone` maintains `/.milestone.md` in the repository's local git exclude, refuses a tracked or
+  staged copy, and never modifies the committed `.gitignore`. Keep bd hidden when editing
   skill prose. (This is the
   *opposite* of how you, the agent working on this repo, track your own tasks — see below.)
 - **Story = WHAT, solver = HOW.** A story states a testable, unambiguous outcome — never the
